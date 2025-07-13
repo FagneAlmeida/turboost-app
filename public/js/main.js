@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let allProducts = [];
     let veiculosParaFiltro = {};
     let cart = JSON.parse(localStorage.getItem('turboostCart')) || [];
-    const WHATSAPP_NUMBER = '5551995470868'; // Número de telefone para o checkout
+    const WHATSAPP_NUMBER = '5551995470868'; // SEU NÚMERO de telefone para o checkout
 
     // --- ELEMENTOS DO DOM ---
     const mobileMenuButton = document.getElementById('mobile-menu-button');
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const heroCtaButton = document.getElementById('hero-cta-button');
     const marcaSelect = document.getElementById('marca-select');
     const modeloSelect = document.getElementById('modelo-select');
-    const anoSelect = document.getElementById('motor-select');
+    const anoSelect = document.getElementById('motor-select'); // Corrigido para corresponder ao HTML
     const buscarBtn = document.getElementById('buscar-produtos-btn');
     const productGrid = document.getElementById('product-grid');
     const vitrineTitulo = document.getElementById('vitrine-titulo');
@@ -29,45 +29,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSomLenta = document.getElementById('btn-som-lenta');
     const btnSomAcelerando = document.getElementById('btn-som-acelerando');
     const soundButtons = [btnSomOriginal, btnSomLenta, btnSomAcelerando];
-    let currentSynth = null;
-    let soundStopTimeout = null;
-    
-    // --- BIBLIOTECA DE SONS (SIMULAÇÃO) ---
-    const bibliotecaSons = {
-        'MT-09': {
-            original: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.5 }, envelope: { attack: 0.1, decay: 0.3, sustain: 0.2, release: 0.1 } }).toDestination(),
-            lenta: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.8 }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 0.1 } }).toDestination(),
-            acelerando: (synth) => {
-                synth.envelope.attack = 0.01;
-                synth.noise.playbackRate.rampTo(5, 1.5);
-                synth.triggerAttackRelease("1.5s");
-            }
-        },
-        'S 1000 RR': {
-            original: () => new Tone.NoiseSynth({ noise: { type: 'pink', playbackRate: 0.6 }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.1 } }).toDestination(),
-            lenta: () => new Tone.NoiseSynth({ noise: { type: 'pink', playbackRate: 1.2 }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.1 } }).toDestination(),
-            acelerando: (synth) => {
-                synth.envelope.attack = 0.01;
-                synth.noise.playbackRate.rampTo(8, 1.2);
-                synth.triggerAttackRelease("1.2s");
-            }
-        },
-        'Interceptor 650': {
-            original: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.3 }, envelope: { attack: 0.2, decay: 0.5, sustain: 0.3, release: 0.2 } }).toDestination(),
-            lenta: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.5 }, envelope: { attack: 0.1, decay: 0.4, sustain: 0.5, release: 0.2 } }).toDestination(),
-            acelerando: (synth) => {
-                synth.envelope.attack = 0.05;
-                synth.noise.playbackRate.rampTo(3, 2);
-                synth.triggerAttackRelease("2s");
-            }
-        }
-    };
+    let currentAudio = null; // Guarda o áudio que está tocando
 
     // --- FUNÇÕES DE INICIALIZAÇÃO E UI ---
     function setupEventListeners() {
         mobileMenuButton.addEventListener('click', toggleMobileMenu);
-        document.querySelectorAll('#mobile-menu a').forEach(link => link.addEventListener('click', toggleMobileMenu));
-        if (heroCtaButton) heroCtaButton.addEventListener('click', smoothScroll);
+        document.querySelectorAll('#mobile-menu a, #header nav a').forEach(link => {
+            if (link.getAttribute('href').startsWith('#')) {
+                link.addEventListener('click', smoothScroll);
+            }
+        });
         
         marcaSelect.addEventListener('change', handleMarcaChange);
         modeloSelect.addEventListener('change', handleModeloChange);
@@ -78,18 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
         closeCartBtn.addEventListener('click', closeCart);
         cartOverlay.addEventListener('click', closeCart);
         
-        contactForm.addEventListener('submit', handleContactSubmit);
-        
-        btnSomOriginal.addEventListener('click', (e) => playSound(modeloSelect.value, 'original', e.currentTarget));
-        btnSomLenta.addEventListener('click', (e) => playSound(modeloSelect.value, 'lenta', e.currentTarget));
-        btnSomAcelerando.addEventListener('click', (e) => playSound(modeloSelect.value, 'acelerando', e.currentTarget));
-
-        checkoutBtn.addEventListener('click', handleCheckout);
+        if(contactForm) contactForm.addEventListener('submit', handleContactSubmit);
+        if(checkoutBtn) checkoutBtn.addEventListener('click', handleCheckout);
     }
 
     function toggleMobileMenu() {
-        mobileMenu.classList.toggle('translate-y-0');
-        mobileMenu.classList.toggle('-translate-y-[150%]');
+        const isOpen = mobileMenu.classList.toggle('-translate-y-[150%]');
+        mobileMenu.classList.toggle('translate-y-0', !isOpen);
     }
 
     function smoothScroll(event) {
@@ -97,6 +63,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const targetId = this.getAttribute('href');
         const targetSection = document.querySelector(targetId);
         if (targetSection) {
+            // Fecha o menu mobile se estiver aberto
+            if (!mobileMenu.classList.contains('-translate-y-[150%]')) {
+                toggleMobileMenu();
+            }
             targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
@@ -115,10 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
             allProducts = await response.json();
             processarProdutosParaFiltro(allProducts);
             popularFiltros();
-            popularVitrine(allProducts);
+            popularVitrine(allProducts); // Mostra os best-sellers inicialmente
         } catch (error) {
             console.error("Falha ao carregar produtos:", error);
-            productGrid.innerHTML = "<p class='text-center text-red-500 col-span-full'>Não foi possível carregar os produtos.</p>";
+            if(productGrid) productGrid.innerHTML = "<p class='text-center text-red-500 col-span-full'>Não foi possível carregar os produtos. Tente novamente mais tarde.</p>";
         }
     }
 
@@ -127,8 +97,11 @@ document.addEventListener('DOMContentLoaded', function() {
         products.forEach(p => {
             if (!filtro[p.marca]) filtro[p.marca] = {};
             if (!filtro[p.marca][p.modelo]) filtro[p.marca][p.modelo] = new Set();
-            p.ano.forEach(ano => filtro[p.marca][p.modelo].add(ano));
+            if (Array.isArray(p.ano)) {
+                p.ano.forEach(ano => filtro[p.marca][p.modelo].add(ano));
+            }
         });
+        // Converte Sets para Arrays ordenados
         for (const marca in filtro) {
             for (const modelo in filtro[marca]) {
                 filtro[marca][modelo] = Array.from(filtro[marca][modelo]).sort((a, b) => b - a);
@@ -138,9 +111,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularVitrine(products) {
+        if(!productGrid) return;
         productGrid.innerHTML = '';
         if (products.length === 0) {
-            productGrid.innerHTML = "<p class='text-center text-gray-400 col-span-full'>Nenhum produto encontrado.</p>";
+            productGrid.innerHTML = "<p class='text-center text-gray-400 col-span-full'>Nenhum produto encontrado para a seleção atual.</p>";
             return;
         }
         products.forEach(product => {
@@ -166,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularFiltros() {
+        if(!marcaSelect) return;
         const marcas = Object.keys(veiculosParaFiltro).sort();
         marcas.forEach(marca => {
             const option = document.createElement('option');
@@ -185,6 +160,8 @@ document.addEventListener('DOMContentLoaded', function() {
         resetSelect(modeloSelect, 'Selecione o Modelo');
         resetSelect(anoSelect, 'Selecione o Ano');
         buscarBtn.disabled = true;
+        setSoundButtonsState(null); // Desabilita botões de som
+
         if (marcaSelecionada) {
             modeloSelect.disabled = false;
             const modelos = Object.keys(veiculosParaFiltro[marcaSelecionada]).sort();
@@ -202,6 +179,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const modeloSelecionado = modeloSelect.value;
         resetSelect(anoSelect, 'Selecione o Ano');
         buscarBtn.disabled = true;
+        
+        stopCurrentSound(); // Para qualquer som que esteja tocando
+        const productForSound = allProducts.find(p => p.marca === marcaSelecionada && p.modelo === modeloSelecionado);
+        setSoundButtonsState(productForSound); // Habilita/desabilita botões
+
         if (modeloSelecionado) {
             anoSelect.disabled = false;
             const anos = veiculosParaFiltro[marcaSelecionada][modeloSelecionado];
@@ -212,8 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 anoSelect.appendChild(option);
             });
         }
-        stopCurrentSound();
-        setSoundButtonsState(modeloSelecionado && bibliotecaSons[modeloSelecionado]);
     }
 
     function handleSearch() {
@@ -221,9 +201,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const modelo = modeloSelect.value;
         const ano = parseInt(anoSelect.value, 10);
         const produtosFiltrados = allProducts.filter(p => {
-            return p.marca === marca && p.modelo === modelo && p.ano.includes(ano);
+            return p.marca === marca && p.modelo === modelo && Array.isArray(p.ano) && p.ano.includes(ano);
         });
-        vitrineTitulo.innerHTML = `Resultados para <span class="text-accent">${marca} ${modelo}</span>`;
+        vitrineTitulo.innerHTML = `Resultados para <span class="text-accent">${marca} ${modelo} ${ano}</span>`;
         popularVitrine(produtosFiltrados);
     }
 
@@ -255,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderCart() {
+        if (!cartItemsContainer) return;
         cartItemsContainer.innerHTML = '';
         if (cart.length === 0) {
             cartItemsContainer.innerHTML = '<p class="text-gray-400 text-center">Seu carrinho está vazio.</p>';
@@ -297,10 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- LÓGICA DO CHECKOUT ---
     function handleCheckout() {
-        if (cart.length === 0) {
-            alert('Seu carrinho está vazio!');
-            return;
-        }
+        if (cart.length === 0) return;
 
         let message = "Olá! Gostaria de fazer um pedido com os seguintes itens:\n\n";
         cart.forEach(item => {
@@ -313,43 +291,68 @@ document.addEventListener('DOMContentLoaded', function() {
         
         window.open(whatsappUrl, '_blank');
 
-        cart = [];
-        saveCartAndRender();
-        closeCart();
+        // Opcional: limpar carrinho após enviar para o WhatsApp
+        // cart = [];
+        // saveCartAndRender();
+        // closeCart();
     }
 
-    // --- LÓGICA DA GALERIA DE SONS ---
+    // --- LÓGICA DA GALERIA DE SONS (CORRIGIDA) ---
+    function setSoundButtonsState(product) {
+        // Habilita/desabilita botões com base nos arquivos que o produto possui
+        btnSomOriginal.disabled = !product?.somOriginal;
+        btnSomLenta.disabled = !product?.somLenta;
+        btnSomAcelerando.disabled = !product?.somAcelerando;
+    }
+
     function stopCurrentSound() {
-        if (soundStopTimeout) clearTimeout(soundStopTimeout);
-        if (currentSynth) {
-            currentSynth.triggerRelease();
-            currentSynth.dispose();
-            currentSynth = null;
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
         }
         soundButtons.forEach(btn => btn.classList.remove('playing'));
     }
 
-    function playSound(model, type, buttonElement) {
+    function playSound(audioPath, buttonElement) {
+        // Se o botão clicado já está tocando, para o som
+        if (buttonElement.classList.contains('playing')) {
+            stopCurrentSound();
+            return;
+        }
+
+        // Para qualquer outro som antes de tocar o novo
         stopCurrentSound();
-        if (Tone.context.state !== 'running') Tone.start();
-        if (bibliotecaSons[model] && bibliotecaSons[model][type]) {
-            const isAccelerating = type === 'acelerando';
-            const synthType = isAccelerating ? 'lenta' : type;
-            currentSynth = bibliotecaSons[model][synthType]();
-            if (isAccelerating) {
-                bibliotecaSons[model].acelerando(currentSynth);
-                soundStopTimeout = setTimeout(stopCurrentSound, 1500);
-            } else {
-                currentSynth.triggerAttack();
-                soundStopTimeout = setTimeout(stopCurrentSound, 3000);
-            }
+
+        if (audioPath) {
+            currentAudio = new Audio(audioPath);
+            currentAudio.play().catch(e => console.error("Erro ao tocar áudio:", e));
             buttonElement.classList.add('playing');
+            
+            // Quando o som terminar, limpa o estado
+            currentAudio.addEventListener('ended', stopCurrentSound);
         }
     }
+    
+    function setupSoundButtonListeners() {
+        // Função auxiliar para encontrar o produto selecionado e tocar o som certo
+        const getSelectedProductAndPlay = (soundKey, button) => {
+            const marca = marcaSelect.value;
+            const modelo = modeloSelect.value;
+            if (!marca || !modelo) return;
 
-    function setSoundButtonsState(enabled) {
-        soundButtons.forEach(btn => btn.disabled = !enabled);
+            // Encontra o primeiro produto que corresponde à marca/modelo para obter os sons
+            const product = allProducts.find(p => p.marca === marca && p.modelo === modelo);
+            if (product && product[soundKey]) {
+                playSound(product[soundKey], button);
+            }
+        };
+
+        btnSomOriginal.addEventListener('click', (e) => getSelectedProductAndPlay('somOriginal', e.currentTarget));
+        btnSomLenta.addEventListener('click', (e) => getSelectedProductAndPlay('somLenta', e.currentTarget));
+        btnSomAcelerando.addEventListener('click', (e) => getSelectedProductAndPlay('somAcelerando', e.currentTarget));
     }
+
 
     // --- LÓGICA DO FORMULÁRIO DE CONTATO ---
     function handleContactSubmit(e) {
@@ -361,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- INICIALIZAÇÃO ---
     function init() {
         setupEventListeners();
+        setupSoundButtonListeners(); // Adicionado para configurar os botões de som
         carregarProdutos();
         renderCart();
         updateYear();
