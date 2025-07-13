@@ -24,7 +24,7 @@
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
             
             <!-- Formulário de Login (inicialmente oculto) -->
-            <div id="login-container" class="form-container hidden">
+            <div id="login-container" class="form-container opacity-0 transform -translate-y-5">
                 <h2 class="text-2xl font-bold mb-6 text-center">Acesso Restrito</h2>
                 <form id="login-form">
                     <div class="mb-4">
@@ -41,7 +41,7 @@
             </div>
 
             <!-- Formulário de Registro (inicialmente oculto) -->
-            <div id="register-container" class="form-container hidden">
+            <div id="register-container" class="form-container opacity-0 transform -translate-y-5">
                 <h2 class="text-2xl font-bold mb-6 text-center">Cadastrar Administrador</h2>
                 <p class="text-center text-sm text-gray-600 mb-4">Crie o primeiro usuário para gerenciar o site.</p>
                 <form id="register-form">
@@ -92,32 +92,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="marca" class="block text-sm font-medium">Marca</label>
-                        <input type="text" id="marca" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                        <input type="text" id="marca" name="marca" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                     </div>
                     <div>
                         <label for="modelo" class="block text-sm font-medium">Modelo</label>
-                        <input type="text" id="modelo" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                        <input type="text" id="modelo" name="modelo" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                     </div>
                 </div>
                 <div>
                     <label for="ano" class="block text-sm font-medium">Anos (separados por vírgula)</label>
-                    <input type="text" id="ano" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="ex: 2022, 2023" required>
+                    <input type="text" id="ano" name="ano" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="ex: 2022, 2023" required>
                 </div>
                 <div>
                     <label for="nomeProduto" class="block text-sm font-medium">Nome do Produto</label>
-                    <input type="text" id="nomeProduto" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                    <input type="text" id="nomeProduto" name="nomeProduto" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                 </div>
                 <div>
                     <label for="descricao" class="block text-sm font-medium">Descrição</label>
-                    <textarea id="descricao" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required></textarea>
+                    <textarea id="descricao" name="descricao" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required></textarea>
                 </div>
                 <div>
                     <label for="preco" class="block text-sm font-medium">Preço</label>
-                    <input type="number" id="preco" step="0.01" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                    <input type="number" id="preco" name="preco" step="0.01" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                 </div>
                 <div class="border-t pt-4">
                     <h3 class="text-lg font-semibold mb-2">Arquivos de Mídia</h3>
-                    <p class="text-xs text-gray-500 mb-2">Para editar, deixe o campo em branco. Para adicionar/trocar, selecione um novo arquivo.</p>
+                    <p class="text-xs text-gray-500 mb-2">Para editar, deixe o campo em branco para manter o arquivo atual. Para adicionar/trocar, selecione um novo arquivo.</p>
                     <div class="space-y-3">
                         <div>
                             <label for="imagemURL" class="block text-sm font-medium">Imagem Principal</label>
@@ -171,13 +171,12 @@
                 try {
                     const response = await fetch('/api/check-admin');
                     const data = await response.json();
-                    if (data.adminExists) {
-                        loginContainer.classList.remove('hidden');
-                    } else {
-                        registerContainer.classList.remove('hidden');
-                    }
+                    const containerToShow = data.adminExists ? loginContainer : registerContainer;
+                    
+                    containerToShow.classList.remove('opacity-0', '-translate-y-5');
+
                 } catch (error) {
-                    loginContainer.classList.remove('hidden');
+                    loginContainer.classList.remove('opacity-0', '-translate-y-5');
                     loginError.textContent = 'Erro ao conectar ao servidor.';
                 }
             }
@@ -221,7 +220,7 @@
                     const result = await response.json();
                     if (response.ok) {
                         alert('Administrador cadastrado com sucesso! Faça o login.');
-                        initializeAuthForm();
+                        window.location.reload(); // Recarrega para mostrar o form de login
                     } else {
                         registerError.textContent = result.message;
                     }
@@ -238,13 +237,20 @@
             // --- LÓGICA DE PRODUTOS ---
             function renderProductList() {
                 productList.innerHTML = '';
+                if (productsData.length === 0) {
+                    productList.innerHTML = `<p class="text-center text-gray-500">Nenhum produto cadastrado ainda.</p>`;
+                    return;
+                }
                 productsData.forEach(product => {
                     const productElement = document.createElement('div');
                     productElement.className = 'flex items-center justify-between p-3 border-b hover:bg-gray-50';
                     productElement.innerHTML = `
-                        <div>
-                            <p class="font-semibold">${product.nomeProduto}</p>
-                            <p class="text-sm text-gray-600">${product.marca} ${product.modelo}</p>
+                        <div class="flex items-center gap-4">
+                            <img src="${product.imagemURL}" alt="${product.nomeProduto}" class="w-16 h-16 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ccc/333?text=Img';">
+                            <div>
+                                <p class="font-semibold">${product.nomeProduto}</p>
+                                <p class="text-sm text-gray-600">${product.marca} ${product.modelo} - R$ ${product.preco.toFixed(2)}</p>
+                            </div>
                         </div>
                         <div class="flex gap-2">
                             <button class="edit-btn text-sm bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600" data-id="${product.id}">Editar</button>
@@ -271,6 +277,7 @@
 
             function openModal(product = null) {
                 productForm.reset();
+                document.getElementById('product-id').value = '';
                 if (product) {
                     modalTitle.textContent = 'Editar Produto';
                     document.getElementById('product-id').value = product.id;
@@ -280,10 +287,8 @@
                     document.getElementById('nomeProduto').value = product.nomeProduto;
                     document.getElementById('descricao').value = product.descricao;
                     document.getElementById('preco').value = product.preco;
-                    // Não preenchemos os campos de arquivo para edição
                 } else {
                     modalTitle.textContent = 'Adicionar Novo Produto';
-                    document.getElementById('product-id').value = '';
                 }
                 productModal.classList.remove('hidden');
                 setTimeout(() => {
@@ -306,10 +311,13 @@
 
             async function handleDelete(e) {
                 const id = parseInt(e.target.dataset.id, 10);
-                if (confirm('Tem certeza que deseja excluir este produto?')) {
+                if (confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
                     try {
                         const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-                        if (!response.ok) throw new Error('Falha ao excluir.');
+                        if (!response.ok) {
+                             const err = await response.json();
+                             throw new Error(err.message || 'Falha ao excluir.');
+                        }
                         alert('Produto excluído com sucesso.');
                         await loadProducts();
                     } catch (error) {
@@ -321,36 +329,39 @@
             addProductBtn.addEventListener('click', () => openModal());
             cancelBtn.addEventListener('click', closeModal);
 
+            // --- LÓGICA DE SUBMISSÃO DO FORMULÁRIO (CORRIGIDA) ---
             productForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const id = document.getElementById('product-id').value;
                 const formData = new FormData(this);
+
+                // Para edição, se um campo de arquivo estiver vazio, ele não deve ser enviado.
+                // Isso evita que o backend apague um arquivo existente.
+                if (id) {
+                    if (!formData.get('imagemURL').name) formData.delete('imagemURL');
+                    if (!formData.get('somOriginal').name) formData.delete('somOriginal');
+                    if (!formData.get('somLenta').name) formData.delete('somLenta');
+                    if (!formData.get('somAcelerando').name) formData.delete('somAcelerando');
+                }
                 
                 const url = id ? `/api/products/${id}` : '/api/products';
                 const method = id ? 'PUT' : 'POST';
 
                 try {
-                    // Para upload de arquivos, não podemos usar JSON.
-                    // O backend com 'multer' vai lidar com o FormData.
-                    // No entanto, a rota PUT do nosso backend atual espera JSON.
-                    // Para simplificar, vamos enviar como JSON e ignorar os uploads no PUT.
-                    
                     const response = await fetch(url, {
                         method: method,
-                        // O body para POST (com upload) deve ser FormData
-                        // O body para PUT (sem upload) pode ser JSON
-                        body: id ? JSON.stringify(Object.fromEntries(formData)) : formData,
-                        headers: id ? { 'Content-Type': 'application/json' } : {}
+                        body: formData, // FormData é enviado diretamente. O browser define o Content-Type.
                     });
 
                     if (!response.ok) {
                         const err = await response.json();
-                        throw new Error(err.message);
+                        throw new Error(err.message || 'Ocorreu um erro no servidor.');
                     }
                     
-                    alert('Produto salvo com sucesso.');
+                    alert('Produto salvo com sucesso!');
                     closeModal();
                     await loadProducts();
+
                 } catch (error) {
                     alert(`Erro ao salvar: ${error.message}`);
                 }
