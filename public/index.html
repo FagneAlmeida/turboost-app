@@ -27,7 +27,7 @@
     <header id="header" class="bg-primary fixed top-0 left-0 right-0 z-50 shadow-lg shadow-black/30">
         <div class="container mx-auto px-6 h-20 flex justify-between items-center">
             <a href="#" class="z-10">
-                <img src="images/logo.png" alt="Logotipo Turboost" class="h-12">
+                <img src="/images/logo.png" alt="Logotipo Turboost" class="h-12">
             </a>
             <nav class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-8">
                 <a href="#" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Início</a>
@@ -213,7 +213,7 @@
                 <!-- Lado Esquerdo: Informações -->
                 <div class="text-center md:text-left">
                     <a href="#" class="inline-block mb-6">
-                         <img src="images/logo.png" alt="Logotipo Turboost" class="h-12 mx-auto md:mx-0">
+                         <img src="/images/logo.png" alt="Logotipo Turboost" class="h-12 mx-auto md:mx-0">
                     </a>
                     <p class="text-gray-400 max-w-md mx-auto md:mx-0">Acelerando suas paixões com a mais alta tecnologia em escapamentos esportivos. Performance e estilo que você ouve e sente.</p>
                     <div class="flex justify-center md:justify-start space-x-6 my-6">
@@ -253,7 +253,7 @@
                 <span class="text-lg">TOTAL</span>
                 <span id="cart-total" class="text-2xl text-accent">R$ 0,00</span>
             </div>
-            <button class="btn btn-accent w-full mt-4">Finalizar Compra</button>
+            <button id="checkout-btn" class="btn btn-accent w-full mt-4" disabled>Finalizar Compra</button>
         </div>
     </div>
     <div id="cart-overlay" class="cart-overlay"></div>
