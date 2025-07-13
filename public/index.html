@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turboost - Escapamentos de Alta Performance para Motocicletas</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="/images/favicon.png?v=1" type="image/png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js para geração de som -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <!-- Nosso arquivo de CSS customizado -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="antialiased">
+
+    <!-- =========== HEADER =========== -->
+    <header id="header" class="bg-primary fixed top-0 left-0 right-0 z-50 shadow-lg shadow-black/30">
+        <div class="container mx-auto px-6 h-20 flex justify-between items-center">
+            <a href="#" class="z-10">
+                <img src="images/logo.png" alt="Logotipo Turboost" class="h-12">
+            </a>
+            <nav class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-8">
+                <a href="#" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Início</a>
+                <a href="#produtos" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Produtos</a>
+                <a href="#sobre" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Sobre Nós</a>
+                <a href="#contato" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Contato</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <a href="#produtos" class="hidden md:block btn btn-accent">Monte seu Kit</a>
+                <!-- Botão do Carrinho -->
+                <button id="cart-button" class="relative text-white hover:text-accent transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-detail text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+                <!-- Botão do Menu Mobile -->
+                <div class="lg:hidden">
+                    <button id="mobile-menu-button" class="text-white focus:outline-none">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="mobile-menu lg:hidden bg-primary absolute top-full left-0 w-full transform -translate-y-[150%]">
+            <nav class="flex flex-col items-center space-y-6 py-8">
+                <a href="#" class="text-white text-lg uppercase font-bold">Início</a>
+                <a href="#produtos" class="text-white text-lg uppercase font-bold">Produtos</a>
+                <a href="#sobre" class="text-white text-lg uppercase font-bold">Sobre Nós</a>
+                <a href="#contato" class="text-white text-lg uppercase font-bold">Contato</a>
+                <a href="#produtos" class="btn btn-accent mt-4">Monte seu Kit</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- =========== HERO SECTION =========== -->
+        <section class="hero-bg h-[calc(100vh-80px)] flex items-center justify-center">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="font-anton text-5xl md:text-7xl lg:text-8xl text-white uppercase leading-tight drop-shadow-lg">O Ronco que Define a Estrada. <br> A <span class="text-accent">Potência</span> que Liberta.</h1>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto my-8 text-gray-200">Escapamentos de alta performance para motocicletas, projetados para um som inconfundível e ganhos reais de potência.</p>
+                <div><a href="#produtos" id="hero-cta-button" class="btn btn-accent btn-hero">Encontre o Escapamento Ideal</a></div>
+            </div>
+        </section>
+
+        <!-- =========== PRODUCT COMPOSER SECTION =========== -->
+        <section id="produtos" class="py-20 bg-bg-light">
+            <div class="container mx-auto px-6">
+                <h2 class="font-anton text-4xl md:text-5xl text-center uppercase text-text-dark">Encontre o Escapamento <span class="text-accent">Perfeito</span> para sua Motocicleta</h2>
+                <div class="max-w-4xl mx-auto mt-12">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                        <div>
+                            <label for="marca-select" class="font-bold text-gray-600 mb-2 block">Marca</label>
+                            <select id="marca-select" class="custom-select"><option value="">Selecione a Marca</option></select>
+                        </div>
+                        <div>
+                            <label for="modelo-select" class="font-bold text-gray-600 mb-2 block">Modelo</label>
+                            <select id="modelo-select" class="custom-select" disabled><option value="">Selecione o Modelo</option></select>
+                        </div>
+                        <div>
+                            <label for="motor-select" class="font-bold text-gray-600 mb-2 block">Ano</label>
+                            <select id="motor-select" class="custom-select" disabled><option value="">Selecione o Ano</option></select>
+                        </div>
+                    </div>
+                    <div class="text-center mt-8">
+                        <button id="buscar-produtos-btn" class="btn btn-accent btn-hero" disabled>Buscar Produtos</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== PRODUCT RESULTS / BEST SELLERS SECTION =========== -->
+        <section id="produtos-destacados" class="py-20 bg-primary">
+            <div class="container mx-auto px-6">
+                <h2 id="vitrine-titulo" class="font-anton text-4xl md:text-5xl text-center uppercase">Nossos <span class="text-accent">Best-Sellers</span></h2>
+                <div class="divider my-4"></div>
+                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+                    <!-- Cards de produtos são carregados aqui pelo JavaScript -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- =========== SOUND GALLERY SECTION =========== -->
+        <section id="galeria-sons" class="py-20 bg-gray-900/50">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="font-anton text-4xl md:text-5xl uppercase">Compare o <span class="text-accent">Som</span> da sua Moto</h2>
+                <div class="divider my-4"></div>
+                <p class="text-gray-400 max-w-xl mx-auto mb-12">Selecione sua moto nos campos acima e depois clique para ouvir a diferença que um Turboost faz.</p>
+                
+                <div class="flex flex-col md:flex-row justify-center items-center gap-6 max-w-3xl mx-auto">
+                    <button id="btn-som-original" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Som Original</span>
+                        <span class="sound-wave-icon flex items-center gap-1"><div class="wave-bar" style="animation-delay: 0.1s;"></div><div class="wave-bar" style="animation-delay: 0.2s;"></div><div class="wave-bar" style="animation-delay: 0.3s;"></div></span>
+                    </button>
+                    <button id="btn-som-lenta" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Turboost (Marcha Lenta)</span>
+                        <span class="sound-wave-icon flex items-center gap-1"><div class="wave-bar" style="animation-delay: 0.1s;"></div><div class="wave-bar" style="animation-delay: 0.2s;"></div><div class="wave-bar" style="animation-delay: 0.3s;"></div></span>
+                    </button>
+                    <button id="btn-som-acelerando" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Turboost (Acelerando)</span>
+                        <span class="sound-wave-icon flex items-center gap-1"><div class="wave-bar" style="animation-delay: 0.1s;"></div><div class="wave-bar" style="animation-delay: 0.2s;"></div><div class="wave-bar" style="animation-delay: 0.3s;"></div></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== ABOUT / WHY US SECTION =========== -->
+        <section id="sobre" class="py-20 bg-gray-900/50">
+            <div class="container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="font-anton text-4xl md:text-5xl uppercase">Nossa <span class="text-accent">Identidade</span></h2>
+                    <div class="divider my-4"></div>
+                    <p class="text-center max-w-2xl mx-auto mb-16 text-gray-400">
+                        Entregamos uma nova alma para sua motocicleta, combinando engenharia de precisão com a paixão pelas duas rodas.
+                    </p>
+                </div>
+                
+                <div class="max-w-4xl mx-auto text-left space-y-12">
+                    <!-- Missão -->
+                    <div>
+                        <h3 class="font-anton text-3xl mb-3 text-accent">Missão</h3>
+                        <p class="text-gray-300 leading-relaxed">
+                            Desenvolver e oferecer ponteiras esportivas de alta tecnologia, voltadas para motociclistas apaixonados por velocidade, que buscam alta performance, estilo exclusivo e diversificação de modelos, rompendo com os padrões convencionais do mercado.
+                        </p>
+                    </div>
+
+                    <!-- Visão -->
+                    <div>
+                        <h3 class="font-anton text-3xl mb-3 text-accent">Visão</h3>
+                        <p class="text-gray-300 leading-relaxed">
+                            Nosso objetivo é ser a referência no Brasil como os maiores produtores e fornecedores de ponteiras esportivas, oferecendo a maior diversificação de modelos e garantindo estilo e alta performance para os motociclistas.
+                        </p>
+                    </div>
+
+                    <!-- Valores -->
+                    <div>
+                        <h3 class="font-anton text-3xl mb-4 text-accent">Valores</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-accent mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-bold text-lg text-white">Qualidade Superior</h4>
+                                    <p class="text-gray-400">Comprometemo-nos a produzir ponteiras esportivas de alta qualidade, garantindo durabilidade e desempenho excepcionais que atendam às necessidades dos motociclistas.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-accent mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-bold text-lg text-white">Diversidade e Inclusão</h4>
+                                    <p class="text-gray-400">Valorizamos a diversidade na nossa linha de produtos, oferecendo uma ampla gama de modelos e estilos para atender as preferências de todos os motociclistas, celebrando suas individualidades.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-accent mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-bold text-lg text-white">Inovação Contínua</h4>
+                                    <p class="text-gray-400">Buscamos sempre melhorar e inovar nossos produtos, integrando as mais recentes tecnologias e designs que maximizam a performance e o estilo, proporcionando uma experiência única aos nossos clientes.</p>
+                                </div>
+                            </li>
+                             <li class="flex items-start">
+                                <svg class="w-6 h-6 text-accent mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-bold text-lg text-white">Paixão pelo Motociclismo</h4>
+                                    <p class="text-gray-400">Somos apaixonados por motociclismo e isso se reflete em tudo o que fazemos. Trabalhamos para inspirar e conectar os motociclistas, reconhecendo e atendendo suas necessidades.</p>
+                                </div>
+                            </li>
+                             <li class="flex items-start">
+                                <svg class="w-6 h-6 text-accent mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-bold text-lg text-white">Responsabilidade Social</h4>
+                                    <p class="text-gray-400">Comprometemo-nos com a ética e a sustentabilidade em nossas práticas empresariais, promovendo um impacto positivo na comunidade e no meio ambiente.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- =========== FOOTER =========== -->
+    <footer id="contato" class="bg-black pt-20 pb-8">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Lado Esquerdo: Informações -->
+                <div class="text-center md:text-left">
+                    <a href="#" class="inline-block mb-6">
+                         <img src="images/logo.png" alt="Logotipo Turboost" class="h-12 mx-auto md:mx-0">
+                    </a>
+                    <p class="text-gray-400 max-w-md mx-auto md:mx-0">Acelerando suas paixões com a mais alta tecnologia em escapamentos esportivos. Performance e estilo que você ouve e sente.</p>
+                    <div class="flex justify-center md:justify-start space-x-6 my-6">
+                        <a href="#" class="text-gray-400 hover:text-accent transition-colors"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path></svg></a>
+                        <a href="#" class="text-gray-400 hover:text-accent transition-colors"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.71v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path></svg></a>
+                        <a href="#" class="text-gray-400 hover:text-accent transition-colors"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.345 2.525c.636-.247 1.363-.416 2.427.465C9.793 2.013 10.148 2 12.315 2zm0 1.62c-2.403 0-2.72.01-3.667.058-1.146.052-1.602.248-1.922.558-.33.31-.506.753-.558 1.922-.048.947-.058 1.264-.058 3.667s.01 2.72.058 3.667c.052 1.146.248 1.602.558 1.922.31.33.753.506 1.922.558.947.048 1.264.058 3.667.058s2.72-.01 3.667-.058c1.146-.052 1.602-.248 1.922-.558.33-.31.506-.753.558-1.922.048-.947.058-1.264.058-3.667s-.01-2.72-.058-3.667c-.052-1.146-.248-1.602-.558-1.922-.31-.33-.753-.506-1.922-.558-.946-.048-1.264-.058-3.667-.058zM12 8.118c-2.147 0-3.882 1.735-3.882 3.882s1.735 3.882 3.882 3.882 3.882-1.735 3.882-3.882-1.735-3.882-3.882-3.882zm0 6.162c-1.259 0-2.28-1.02-2.28-2.28s1.02-2.28 2.28-2.28 2.28 1.02 2.28 2.28-1.021 2.28-2.28 2.28zM16.95 6.586a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5z" clip-rule="evenodd"></path></svg></a>
+                    </div>
+                </div>
+                <!-- Lado Direito: Formulário de Contato -->
+                <div>
+                    <h3 class="font-anton text-3xl mb-4 text-white text-center md:text-left">Fale Conosco</h3>
+                    <form id="contact-form" class="space-y-4">
+                        <input type="text" placeholder="Seu Nome" class="contact-input" required>
+                        <input type="email" placeholder="Seu E-mail" class="contact-input" required>
+                        <textarea placeholder="Sua Mensagem" rows="4" class="contact-input" required></textarea>
+                        <button type="submit" class="btn btn-accent w-full">Enviar Mensagem</button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-6 mt-16 text-center">
+                <p>&copy; <span id="year"></span> Turboost. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- =========== PAINEL DO CARRINHO (Oculto) =========== -->
+    <div id="cart-panel" class="cart-panel">
+        <div class="cart-header">
+            <h3 class="font-anton text-2xl text-white">Seu Carrinho</h3>
+            <button id="close-cart-btn" class="text-white hover:text-accent">&times;</button>
+        </div>
+        <div id="cart-items" class="cart-items">
+            <!-- Itens do carrinho aparecem aqui -->
+        </div>
+        <div class="cart-footer">
+            <div class="flex justify-between items-center font-bold">
+                <span class="text-lg">TOTAL</span>
+                <span id="cart-total" class="text-2xl text-accent">R$ 0,00</span>
+            </div>
+            <button class="btn btn-accent w-full mt-4">Finalizar Compra</button>
+        </div>
+    </div>
+    <div id="cart-overlay" class="cart-overlay"></div>
+
+    <!-- Nosso arquivo de JavaScript -->
+    <script src="js/main.js"></script>
+
+</body>
+</html>

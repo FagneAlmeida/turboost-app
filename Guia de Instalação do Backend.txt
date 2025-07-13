@@ -1,0 +1,46 @@
+Como Configurar e Rodar o Servidor
+Para colocar o backend da Turboost no ar, siga estes passos simples:
+
+Pré-requisitos:
+
+Ter o Node.js instalado na sua máquina.
+
+Passo 1: Crie a Estrutura de Pastas
+
+No seu computador, crie uma pasta principal para o projeto (ex: turboost-app) e, dentro dela, a seguinte estrutura:
+
+/turboost-app
+|-- server.js             (Copie o código do backend aqui)
+|-- package.json          (Copie o código do package.json aqui)
+|-- products.json         (Copie o JSON de produtos que criamos)
+|-- /public
+|   |-- index.html        (O arquivo do site principal)
+|   |-- admin.html        (O arquivo do painel de admin)
+|   |-- /images           (Pasta para imagens dos produtos)
+|   |-- /sounds           (Pasta para os sons dos produtos)
+|   |-- /css              (Se tiver arquivos CSS externos)
+|   |-- /js               (Se tiver arquivos JS externos)
+
+Passo 2: Instale as Dependências
+
+Abra o terminal ou prompt de comando.
+
+Navegue até a pasta do projeto (cd caminho/para/turboost-app).
+
+Execute o comando abaixo. Ele vai ler o package.json e instalar tudo o que o servidor precisa para funcionar (Express, Multer, etc.).
+
+npm install
+
+Passo 3: Inicie o Servidor
+
+Ainda no terminal, execute um dos seguintes comandos:
+
+Para produção:
+
+npm start
+
+Para desenvolvimento (o servidor reiniciará automaticamente a cada alteração no código):
+
+npm run dev
+
+Pronto! Seu servidor estará rodando. Você verá a mensagem Servidor Turboost rodando na porta 3000 no terminal. Agora você pode acessar o site e a área de administração pelos links fornecidos.

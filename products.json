@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "marca": "Yamaha",
+    "modelo": "MT-09",
+    "ano": [2022, 2023],
+    "nomeProduto": "Turboost Hyper-Flow",
+    "descricao": "Ponteira e link pipe em Aço Inox 304. Ganho de +8cv e som agressivo.",
+    "preco": 2999.90,
+    "imagemURL": "/images/products/turboost-mt09.jpg",
+    "sons": {
+      "original": "/sounds/mt09-original.mp3",
+      "lenta": "/sounds/mt09-turboost-lenta.mp3",
+      "acelerando": "/sounds/mt09-turboost-acelerando.mp3"
+    }
+  },
+  {
+    "id": 2,
+    "marca": "BMW",
+    "modelo": "S 1000 RR",
+    "ano": [2022, 2023],
+    "nomeProduto": "Turboost Race-Spec",
+    "descricao": "Sistema completo em Titânio. Ganho de +12cv e máxima leveza para performance de pista.",
+    "preco": 5899.90,
+    "imagemURL": "/images/products/turboost-s1000rr.jpg",
+    "sons": {
+      "original": "/sounds/s1000rr-original.mp3",
+      "lenta": "/sounds/s1000rr-turboost-lenta.mp3",
+      "acelerando": "/sounds/s1000rr-turboost-acelerando.mp3"
+    }
+  },
+  {
+    "id": 3,
+    "marca": "Royal Enfield",
+    "modelo": "Interceptor 650",
+    "ano": [2022, 2023],
+    "nomeProduto": "Turboost Classic-Tone",
+    "descricao": "Ponteiras duplas em Aço Inox 304 com acabamento cromado. Ronco clássico e encorpado.",
+    "preco": 1899.90,
+    "imagemURL": "/images/products/turboost-interceptor.jpg",
+    "sons": {
+      "original": "/sounds/interceptor-original.mp3",
+      "lenta": "/sounds/interceptor-turboost-lenta.mp3",
+      "acelerando": "/sounds/interceptor-turboost-acelerando.mp3"
+    }
+  }
+]
