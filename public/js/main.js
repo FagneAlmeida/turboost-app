@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let allProducts = [];
     let veiculosParaFiltro = {};
     let cart = JSON.parse(localStorage.getItem('turboostCart')) || [];
+    const WHATSAPP_NUMBER = '5551995470868'; // Número de telefone para o checkout
 
     // --- ELEMENTOS DO DOM ---
     const mobileMenuButton = document.getElementById('mobile-menu-button');
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartItemsContainer = document.getElementById('cart-items');
     const cartCount = document.getElementById('cart-count');
     const cartTotal = document.getElementById('cart-total');
+    const checkoutBtn = document.getElementById('checkout-btn');
     const contactForm = document.getElementById('contact-form');
     const yearSpan = document.getElementById('year');
     const btnSomOriginal = document.getElementById('btn-som-original');
@@ -32,9 +34,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- BIBLIOTECA DE SONS (SIMULAÇÃO) ---
     const bibliotecaSons = {
-        'MT-09': { /* ... */ },
-        'S 1000 RR': { /* ... */ },
-        'Interceptor 650': { /* ... */ }
+        'MT-09': {
+            original: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.5 }, envelope: { attack: 0.1, decay: 0.3, sustain: 0.2, release: 0.1 } }).toDestination(),
+            lenta: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.8 }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 0.1 } }).toDestination(),
+            acelerando: (synth) => {
+                synth.envelope.attack = 0.01;
+                synth.noise.playbackRate.rampTo(5, 1.5);
+                synth.triggerAttackRelease("1.5s");
+            }
+        },
+        'S 1000 RR': {
+            original: () => new Tone.NoiseSynth({ noise: { type: 'pink', playbackRate: 0.6 }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.1 } }).toDestination(),
+            lenta: () => new Tone.NoiseSynth({ noise: { type: 'pink', playbackRate: 1.2 }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.1 } }).toDestination(),
+            acelerando: (synth) => {
+                synth.envelope.attack = 0.01;
+                synth.noise.playbackRate.rampTo(8, 1.2);
+                synth.triggerAttackRelease("1.2s");
+            }
+        },
+        'Interceptor 650': {
+            original: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.3 }, envelope: { attack: 0.2, decay: 0.5, sustain: 0.3, release: 0.2 } }).toDestination(),
+            lenta: () => new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.5 }, envelope: { attack: 0.1, decay: 0.4, sustain: 0.5, release: 0.2 } }).toDestination(),
+            acelerando: (synth) => {
+                synth.envelope.attack = 0.05;
+                synth.noise.playbackRate.rampTo(3, 2);
+                synth.triggerAttackRelease("2s");
+            }
+        }
     };
 
     // --- FUNÇÕES DE INICIALIZAÇÃO E UI ---
@@ -57,6 +83,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSomOriginal.addEventListener('click', (e) => playSound(modeloSelect.value, 'original', e.currentTarget));
         btnSomLenta.addEventListener('click', (e) => playSound(modeloSelect.value, 'lenta', e.currentTarget));
         btnSomAcelerando.addEventListener('click', (e) => playSound(modeloSelect.value, 'acelerando', e.currentTarget));
+
+        checkoutBtn.addEventListener('click', handleCheckout);
     }
 
     function toggleMobileMenu() {
@@ -253,6 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
         cartCount.textContent = totalItems;
         cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+        
+        checkoutBtn.disabled = cart.length === 0;
     }
 
     function openCart() {
@@ -263,6 +293,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeCart() {
         cartPanel.classList.remove('open');
         cartOverlay.classList.remove('open');
+    }
+
+    // --- LÓGICA DO CHECKOUT ---
+    function handleCheckout() {
+        if (cart.length === 0) {
+            alert('Seu carrinho está vazio!');
+            return;
+        }
+
+        let message = "Olá! Gostaria de fazer um pedido com os seguintes itens:\n\n";
+        cart.forEach(item => {
+            message += `*${item.quantity}x ${item.nomeProduto}* - R$ ${item.preco.toFixed(2).replace('.', ',')}\n`;
+        });
+        const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+        message += `\n*Total:* R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+
+        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+        
+        window.open(whatsappUrl, '_blank');
+
+        cart = [];
+        saveCartAndRender();
+        closeCart();
     }
 
     // --- LÓGICA DA GALERIA DE SONS ---
@@ -280,7 +333,6 @@ document.addEventListener('DOMContentLoaded', function() {
         stopCurrentSound();
         if (Tone.context.state !== 'running') Tone.start();
         if (bibliotecaSons[model] && bibliotecaSons[model][type]) {
-            // Simulação de som
             const isAccelerating = type === 'acelerando';
             const synthType = isAccelerating ? 'lenta' : type;
             currentSynth = bibliotecaSons[model][synthType]();
