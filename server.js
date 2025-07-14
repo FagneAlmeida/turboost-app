@@ -1,68 +1,59 @@
 // 1. IMPORTAÇÃO DE MÓDULOS
 const express = require('express');
-const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const admin = require('firebase-admin');
 
-// 2. CONFIGURAÇÃO INICIAL
+// =======================================================================================
+// 2. CONFIGURAÇÃO DO FIREBASE
+// Lembre-se que o arquivo "serviceAccountKey.json" deve estar na raiz do projeto.
+// E o nome do seu bucket do Firebase Storage deve ser preenchido abaixo.
+try {
+    const serviceAccount = require('./serviceAccountKey.json');
+    const BUCKET_NAME = 'oficina-fg-motos.appspot.com'; // <-- MUDE PARA O NOME DO SEU BUCKET
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: BUCKET_NAME
+    });
+} catch (error) {
+    console.error("ERRO CRÍTICO: O arquivo 'serviceAccountKey.json' não foi encontrado ou está inválido. O servidor não pode iniciar sem ele.");
+    process.exit(1); // Impede o servidor de iniciar se a chave não for encontrada.
+}
+
+
+const db = admin.firestore();
+const bucket = admin.storage().bucket();
+// =======================================================================================
+
+
+// 3. CONFIGURAÇÃO INICIAL DO EXPRESS
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_FOLDER = path.join(__dirname, 'db'); // Pasta para os arquivos JSON
-const PRODUCTS_FILE = path.join(DB_FOLDER, 'products.json');
-const USERS_FILE = path.join(DB_FOLDER, 'users.json');
 const SALT_ROUNDS = 10;
 
-// Função para garantir que os diretórios e arquivos de 'banco de dados' existam
-const ensureDbExists = async () => {
-    try {
-        await fs.mkdir(DB_FOLDER, { recursive: true });
-        await fs.access(PRODUCTS_FILE);
-    } catch (error) {
-        await fs.writeFile(PRODUCTS_FILE, '[]', 'utf8');
-    }
-    try {
-        await fs.access(USERS_FILE);
-    } catch (error) {
-        await fs.writeFile(USERS_FILE, '[]', 'utf8');
-    }
-};
 
-
-// 3. MIDDLEWARE
+// 4. MIDDLEWARE
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'seu-segredo-super-secreto-e-longo-para-turboost',
+    secret: 'um-segredo-muito-forte-para-proteger-a-sessao',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // Cookie de 1 dia
+    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // Servir arquivos estáticos da pasta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// Configuração do Multer para upload de arquivos
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        let destFolder = 'images'; // Pasta padrão
-        if (file.fieldname.startsWith('som')) {
-            destFolder = 'sounds';
-        }
-        const fullPath = path.join(__dirname, 'public', destFolder);
-        fs.mkdir(fullPath, { recursive: true }).then(() => {
-            cb(null, fullPath);
-        });
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+// Configuração do Multer para guardar arquivos na memória
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // Limite de 5MB por arquivo
 });
-
-const upload = multer({ storage: storage });
 const uploadFields = upload.fields([
     { name: 'imagemURL', maxCount: 1 },
     { name: 'somOriginal', maxCount: 1 },
@@ -78,30 +69,65 @@ function isAuthenticated(req, res, next) {
     res.status(401).json({ message: 'Acesso não autorizado. Por favor, faça o login.' });
 }
 
+// Helper para fazer upload de arquivos para o Firebase Storage
+const uploadFileToStorage = async (file, folder) => {
+    if (!file) return null;
 
-// 4. FUNÇÕES AUXILIARES PARA O 'BANCO DE DADOS' JSON
-const readData = async (filePath) => JSON.parse(await fs.readFile(filePath, 'utf8'));
-const writeData = async (filePath, data) => fs.writeFile(filePath, JSON.stringify(data, null, 2));
+    const fileName = `${folder}/${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
+    const fileUpload = bucket.file(fileName);
+
+    const blobStream = fileUpload.createWriteStream({
+        metadata: {
+            contentType: file.mimetype
+        }
+    });
+
+    return new Promise((resolve, reject) => {
+        blobStream.on('error', error => reject(error));
+        blobStream.on('finish', () => {
+            fileUpload.makePublic().then(() => {
+                resolve(`https://storage.googleapis.com/${bucket.name}/${fileName}`);
+            });
+        });
+        blobStream.end(file.buffer);
+    });
+};
 
 
 // 5. ROTAS DA API PÚBLICA E DE AUTENTICAÇÃO
+const usersCollection = db.collection('users');
+const productsCollection = db.collection('products');
+
+// Rota para servir a página principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Rota para servir a página de admin
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 
 // [GET] /api/check-admin - Verifica se um admin já existe
 app.get('/api/check-admin', async (req, res) => {
     try {
-        const users = await readData(USERS_FILE);
-        res.json({ adminExists: users.length > 0 });
+        const snapshot = await usersCollection.limit(1).get();
+        res.json({ adminExists: !snapshot.empty });
     } catch (error) {
-        res.json({ adminExists: false });
+        console.error("Erro ao checar admin:", error);
+        res.status(500).json({ message: 'Erro no servidor.' });
     }
 });
 
 // [GET] /api/products - Rota pública para listar todos os produtos
 app.get('/api/products', async (req, res) => {
     try {
-        const products = await readData(PRODUCTS_FILE);
+        const snapshot = await productsCollection.orderBy('createdAt', 'desc').get();
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.json(products);
     } catch (error) {
+        console.error("Erro ao ler produtos:", error);
         res.status(500).json({ message: 'Erro ao ler os produtos.' });
     }
 });
@@ -109,8 +135,8 @@ app.get('/api/products', async (req, res) => {
 // [POST] /api/register - Registra o primeiro administrador
 app.post('/api/register', async (req, res) => {
     try {
-        let users = await readData(USERS_FILE);
-        if (users.length > 0) {
+        const snapshot = await usersCollection.limit(1).get();
+        if (!snapshot.empty) {
             return res.status(403).json({ message: 'Um administrador já está cadastrado.' });
         }
 
@@ -120,13 +146,10 @@ app.post('/api/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const newUser = { id: Date.now(), username, password: hashedPassword };
-        
-        users.push(newUser);
-        await writeData(USERS_FILE, users);
+        await usersCollection.add({ username, password: hashedPassword });
         res.status(201).json({ message: 'Administrador cadastrado com sucesso!' });
-
     } catch (error) {
+        console.error("Erro ao registrar:", error);
         res.status(500).json({ message: 'Erro interno do servidor ao registrar.' });
     }
 });
@@ -134,14 +157,16 @@ app.post('/api/register', async (req, res) => {
 // [POST] /login - Autentica o administrador
 app.post('/login', async (req, res) => {
     try {
-        const users = await readData(USERS_FILE);
         const { username, password } = req.body;
-        
-        const user = users.find(u => u.username === username);
-        if (!user) {
+        const snapshot = await usersCollection.where('username', '==', username).limit(1).get();
+
+        if (snapshot.empty) {
             return res.status(401).json({ message: 'Credenciais inválidas.' });
         }
 
+        const userDoc = snapshot.docs[0];
+        const user = userDoc.data();
+        
         const match = await bcrypt.compare(password, user.password);
         if (match) {
             req.session.loggedIn = true;
@@ -150,6 +175,7 @@ app.post('/login', async (req, res) => {
             res.status(401).json({ message: 'Credenciais inválidas.' });
         }
     } catch (error) {
+        console.error("Erro ao fazer login:", error);
         res.status(500).json({ message: 'Erro interno do servidor ao fazer login.' });
     }
 });
@@ -168,30 +194,36 @@ app.post('/logout', (req, res) => {
 // [POST] /api/products - Cria um novo produto
 app.post('/api/products', isAuthenticated, uploadFields, async (req, res) => {
     try {
-        const products = await readData(PRODUCTS_FILE);
         const { marca, modelo, ano, nomeProduto, descricao, preco } = req.body;
+        const files = req.files;
 
-        if (!marca || !modelo || !ano || !nomeProduto || !preco || !req.files || !req.files['imagemURL']) {
+        if (!marca || !modelo || !ano || !nomeProduto || !preco || !files || !files['imagemURL']) {
             return res.status(400).json({ message: 'Campos obrigatórios (incluindo imagem principal) não foram preenchidos.' });
         }
         
+        const [imagemURL, somOriginal, somLenta, somAcelerando] = await Promise.all([
+            uploadFileToStorage(files.imagemURL ? files.imagemURL[0] : null, 'images'),
+            uploadFileToStorage(files.somOriginal ? files.somOriginal[0] : null, 'sounds'),
+            uploadFileToStorage(files.somLenta ? files.somLenta[0] : null, 'sounds'),
+            uploadFileToStorage(files.somAcelerando ? files.somAcelerando[0] : null, 'sounds')
+        ]);
+
         const newProduct = {
-            id: Date.now(),
             marca,
             modelo,
             ano: ano.split(',').map(a => parseInt(a.trim(), 10)).filter(a => !isNaN(a)),
             nomeProduto,
             descricao,
             preco: parseFloat(preco),
-            imagemURL: `/images/${req.files['imagemURL'][0].filename}`,
-            somOriginal: req.files['somOriginal'] ? `/sounds/${req.files['somOriginal'][0].filename}` : null,
-            somLenta: req.files['somLenta'] ? `/sounds/${req.files['somLenta'][0].filename}` : null,
-            somAcelerando: req.files['somAcelerando'] ? `/sounds/${req.files['somAcelerando'][0].filename}` : null,
+            imagemURL,
+            somOriginal,
+            somLenta,
+            somAcelerando,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        products.push(newProduct);
-        await writeData(PRODUCTS_FILE, products);
-        res.status(201).json(newProduct);
+        const docRef = await productsCollection.add(newProduct);
+        res.status(201).json({ id: docRef.id, ...newProduct });
 
     } catch (error) {
         console.error("Erro ao criar produto:", error);
@@ -202,36 +234,32 @@ app.post('/api/products', isAuthenticated, uploadFields, async (req, res) => {
 // [PUT] /api/products/:id - Atualiza um produto existente
 app.put('/api/products/:id', isAuthenticated, uploadFields, async (req, res) => {
     try {
-        const products = await readData(PRODUCTS_FILE);
-        const productId = parseInt(req.params.id, 10);
-        const productIndex = products.findIndex(p => p.id === productId);
+        const productId = req.params.id;
+        const docRef = productsCollection.doc(productId);
+        const doc = await docRef.get();
 
-        if (productIndex === -1) {
+        if (!doc.exists) {
             return res.status(404).json({ message: 'Produto não encontrado.' });
         }
 
-        const existingProduct = products[productIndex];
         const { marca, modelo, ano, nomeProduto, descricao, preco } = req.body;
+        const files = req.files;
+        const updateData = {};
 
-        const updatedProduct = {
-            ...existingProduct,
-            marca: marca || existingProduct.marca,
-            modelo: modelo || existingProduct.modelo,
-            ano: ano ? ano.split(',').map(a => parseInt(a.trim(), 10)).filter(a => !isNaN(a)) : existingProduct.ano,
-            nomeProduto: nomeProduto || existingProduct.nomeProduto,
-            descricao: descricao || existingProduct.descricao,
-            preco: preco ? parseFloat(preco) : existingProduct.preco
-        };
+        if (marca) updateData.marca = marca;
+        if (modelo) updateData.modelo = modelo;
+        if (nomeProduto) updateData.nomeProduto = nomeProduto;
+        if (descricao) updateData.descricao = descricao;
+        if (preco) updateData.preco = parseFloat(preco);
+        if (ano) updateData.ano = ano.split(',').map(a => parseInt(a.trim(), 10)).filter(a => !isNaN(a));
+
+        if (files.imagemURL) updateData.imagemURL = await uploadFileToStorage(files.imagemURL[0], 'images');
+        if (files.somOriginal) updateData.somOriginal = await uploadFileToStorage(files.somOriginal[0], 'sounds');
+        if (files.somLenta) updateData.somLenta = await uploadFileToStorage(files.somLenta[0], 'sounds');
+        if (files.somAcelerando) updateData.somAcelerando = await uploadFileToStorage(files.somAcelerando[0], 'sounds');
         
-        // Atualiza os caminhos dos arquivos apenas se novos arquivos foram enviados
-        if (req.files['imagemURL']) updatedProduct.imagemURL = `/images/${req.files['imagemURL'][0].filename}`;
-        if (req.files['somOriginal']) updatedProduct.somOriginal = `/sounds/${req.files['somOriginal'][0].filename}`;
-        if (req.files['somLenta']) updatedProduct.somLenta = `/sounds/${req.files['somLenta'][0].filename}`;
-        if (req.files['somAcelerando']) updatedProduct.somAcelerando = `/sounds/${req.files['somAcelerando'][0].filename}`;
-
-        products[productIndex] = updatedProduct;
-        await writeData(PRODUCTS_FILE, products);
-        res.status(200).json(updatedProduct);
+        await docRef.update(updateData);
+        res.status(200).json({ message: 'Produto atualizado com sucesso.' });
 
     } catch (error) {
         console.error("Erro ao atualizar produto:", error);
@@ -242,27 +270,29 @@ app.put('/api/products/:id', isAuthenticated, uploadFields, async (req, res) => 
 // [DELETE] /api/products/:id - Exclui um produto
 app.delete('/api/products/:id', isAuthenticated, async (req, res) => {
     try {
-        let products = await readData(PRODUCTS_FILE);
-        const productId = parseInt(req.params.id, 10);
-        
-        const productToDelete = products.find(p => p.id === productId);
-        if (!productToDelete) {
+        const productId = req.params.id;
+        const docRef = productsCollection.doc(productId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
             return res.status(404).json({ message: 'Produto não encontrado.' });
         }
 
-        // Opcional: deletar os arquivos de mídia do servidor
-        Object.values(productToDelete).forEach(async (value) => {
-            if (typeof value === 'string' && (value.startsWith('/images/') || value.startsWith('/sounds/'))) {
+        const productData = doc.data();
+        
+        const fileUrls = [productData.imagemURL, productData.somOriginal, productData.somLenta, productData.somAcelerando];
+        for (const url of fileUrls) {
+            if (url) {
                 try {
-                    await fs.unlink(path.join(__dirname, 'public', value));
+                    const fileName = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
+                    await bucket.file(fileName).delete();
                 } catch (err) {
-                    console.error(`Falha ao deletar arquivo: ${value}`, err.message);
+                    console.error(`Falha ao deletar arquivo do Storage: ${url}`, err.message);
                 }
             }
-        });
+        }
 
-        const updatedProducts = products.filter(p => p.id !== productId);
-        await writeData(PRODUCTS_FILE, updatedProducts);
+        await docRef.delete();
         res.status(200).json({ message: 'Produto excluído com sucesso.' });
 
     } catch (error) {
@@ -273,7 +303,6 @@ app.delete('/api/products/:id', isAuthenticated, async (req, res) => {
 
 
 // 7. INICIALIZAÇÃO DO SERVIDOR
-app.listen(PORT, async () => {
-    await ensureDbExists(); // Garante que os arquivos/pastas existam antes de iniciar
-    console.log(`Servidor Turboost rodando na porta ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Servidor Turboost rodando na porta ${PORT} com integração Firebase.`);
 });
