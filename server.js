@@ -1,402 +1,289 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Turboost</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .modal {
-            transition: opacity 0.3s ease;
-        }
-        .modal-content {
-            transition: transform 0.3s ease;
-        }
-        .form-container {
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 text-gray-800">
+// 1. IMPORTAÇÃO DE MÓDULOS
+const express = require('express');
+const path = require('path');
+const multer = require('multer');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
+const admin = require('firebase-admin');
 
-    <!-- =========== TELA DE LOGIN/REGISTRO =========== -->
-    <div id="auth-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
-            
-            <div id="login-container" class="form-container opacity-0 transform -translate-y-5 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-center">Acesso Restrito</h2>
-                <form id="login-form">
-                    <div class="mb-4">
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-                        <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
-                    </div>
-                    <div class="mb-4">
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                        <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
-                    </div>
-                    <button type="submit" class="w-full bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors">Entrar</button>
-                    <p id="login-error" class="text-red-500 text-sm mt-2 text-center"></p>
-                </form>
-            </div>
+// =======================================================================================
+// 2. CONFIGURAÇÃO DO FIREBASE
+try {
+    const serviceAccount = require('./serviceAccountKey.json');
+    const BUCKET_NAME = 'oficina-fg-motos.appspot.com'; // CONFIRMADO
 
-            <div id="register-container" class="form-container opacity-0 transform -translate-y-5 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-center">Cadastrar Administrador</h2>
-                <p class="text-center text-sm text-gray-600 mb-4">Crie o primeiro usuário para gerenciar o site.</p>
-                <form id="register-form">
-                    <div class="mb-4">
-                        <label for="reg-username" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-                        <input type="text" id="reg-username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                    </div>
-                    <div class="mb-4">
-                        <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                        <input type="password" id="reg-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700">Cadastrar</button>
-                    <p id="register-error" class="text-red-500 text-sm mt-2 text-center"></p>
-                </form>
-            </div>
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: BUCKET_NAME
+    });
+} catch (error) {
+    console.error("ERRO CRÍTICO: O arquivo 'serviceAccountKey.json' não foi encontrado ou está inválido. O servidor não pode iniciar sem ele.");
+    process.exit(1);
+}
 
-        </div>
-    </div>
+const db = admin.firestore();
+const bucket = admin.storage().bucket();
+// =======================================================================================
 
-    <!-- =========== ÁREA DE ADMINISTRAÇÃO (Oculta por padrão) =========== -->
-    <div id="admin-area" class="hidden">
-        <header class="bg-white shadow-md">
-            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-800">Gerenciamento de Produtos</h1>
-                <button id="logout-btn" class="text-sm text-red-600 hover:underline">Sair</button>
-            </div>
-        </header>
 
-        <main class="container mx-auto px-6 py-8">
-            <div class="flex justify-end mb-6">
-                <button id="add-product-btn" class="bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors">Adicionar Novo Produto</button>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold mb-4 border-b pb-3">Produtos Cadastrados</h2>
-                <div id="product-list" class="space-y-4">
-                    <!-- Produtos serão carregados aqui -->
-                </div>
-            </div>
-        </main>
-    </div>
+// 3. CONFIGURAÇÃO INICIAL DO EXPRESS
+const app = express();
+const PORT = process.env.PORT || 3000;
+const SALT_ROUNDS = 10;
 
-    <!-- =========== MODAL DE ADICIONAR/EDITAR PRODUTO =========== -->
-    <div id="product-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-40 hidden opacity-0">
-        <div class="modal-content bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform -translate-y-10">
-            <h2 id="modal-title" class="text-2xl font-bold mb-6">Adicionar Novo Produto</h2>
-            <form id="product-form" class="space-y-4">
-                <input type="hidden" id="product-id">
-                
-                <!-- Campos Básicos -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="marca" class="block text-sm font-medium">Marca</label>
-                        <input type="text" id="marca" name="marca" class="w-full mt-1 px-3 py-2 border rounded-md" required>
-                    </div>
-                    <div>
-                        <label for="modelo" class="block text-sm font-medium">Modelo</label>
-                        <input type="text" id="modelo" name="modelo" class="w-full mt-1 px-3 py-2 border rounded-md" required>
-                    </div>
-                </div>
-                <div>
-                    <label for="ano" class="block text-sm font-medium">Anos (separados por vírgula)</label>
-                    <input type="text" id="ano" name="ano" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="ex: 2022, 2023" required>
-                </div>
-                <div>
-                    <label for="nomeProduto" class="block text-sm font-medium">Nome do Produto</label>
-                    <input type="text" id="nomeProduto" name="nomeProduto" class="w-full mt-1 px-3 py-2 border rounded-md" required>
-                </div>
-                <div>
-                    <label for="descricao" class="block text-sm font-medium">Descrição</label>
-                    <textarea id="descricao" name="descricao" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required></textarea>
-                </div>
-                <div>
-                    <label for="preco" class="block text-sm font-medium">Preço</label>
-                    <input type="number" id="preco" name="preco" step="0.01" class="w-full mt-1 px-3 py-2 border rounded-md" required>
-                </div>
 
-                <!-- Campos de Mídia -->
-                <div class="border-t pt-4 mt-4">
-                    <h3 class="text-lg font-semibold mb-2">Galeria de Mídia</h3>
-                    <p class="text-xs text-gray-500 mb-3">Para editar, deixe campos de arquivo em branco para manter os atuais.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="imagemURL1" class="block text-sm font-medium">Imagem Principal</label>
-                            <input type="file" id="imagemURL1" name="imagemURL1" class="w-full mt-1 text-sm file-input">
-                        </div>
-                         <div>
-                            <label for="imagemURL2" class="block text-sm font-medium">Imagem 2</label>
-                            <input type="file" id="imagemURL2" name="imagemURL2" class="w-full mt-1 text-sm file-input">
-                        </div>
-                         <div>
-                            <label for="imagemURL3" class="block text-sm font-medium">Imagem 3</label>
-                            <input type="file" id="imagemURL3" name="imagemURL3" class="w-full mt-1 text-sm file-input">
-                        </div>
-                    </div>
-                     <div class="mt-4">
-                        <label for="videoURL" class="block text-sm font-medium">Link do Vídeo (YouTube)</label>
-                        <input type="url" id="videoURL" name="videoURL" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="https://www.youtube.com/watch?v=...">
-                    </div>
-                </div>
+// 4. MIDDLEWARE
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'um-segredo-muito-forte-para-proteger-a-sessao',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+}));
 
-                <!-- Campos de Som (Mantidos) -->
-                <div class="border-t pt-4 mt-4">
-                    <h3 class="text-lg font-semibold mb-2">Comparação de Som</h3>
-                     <div class="space-y-3">
-                        <div>
-                            <label for="somOriginal" class="block text-sm font-medium">Som Original</label>
-                            <input type="file" id="somOriginal" name="somOriginal" class="w-full mt-1 text-sm file-input-sound">
-                        </div>
-                        <div>
-                            <label for="somLenta" class="block text-sm font-medium">Som (Marcha Lenta)</label>
-                            <input type="file" id="somLenta" name="somLenta" class="w-full mt-1 text-sm file-input-sound">
-                        </div>
-                        <div>
-                            <label for="somAcelerando" class="block text-sm font-medium">Som (Acelerando)</label>
-                            <input type="file" id="somAcelerando" name="somAcelerando" class="w-full mt-1 text-sm file-input-sound">
-                        </div>
-                    </div>
-                </div>
+app.use(express.static(path.join(__dirname, 'public')));
 
-                <div class="flex justify-end gap-4 pt-6 border-t mt-4">
-                    <button type="button" id="cancel-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-md hover:bg-gray-300">Cancelar</button>
-                    <button type="submit" class="bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-md hover:bg-yellow-600">Salvar Produto</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <script>
-        // O JavaScript para esta página permanece o mesmo por enquanto.
-        // As mudanças para salvar os novos campos serão feitas no server.js.
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- ELEMENTOS DO DOM ---
-            const authOverlay = document.getElementById('auth-overlay');
-            const loginContainer = document.getElementById('login-container');
-            const registerContainer = document.getElementById('register-container');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const loginError = document.getElementById('login-error');
-            const registerError = document.getElementById('register-error');
-            const adminArea = document.getElementById('admin-area');
-            const logoutBtn = document.getElementById('logout-btn');
-            const productList = document.getElementById('product-list');
-            const addProductBtn = document.getElementById('add-product-btn');
-            const productModal = document.getElementById('product-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const productForm = document.getElementById('product-form');
-            const cancelBtn = document.getElementById('cancel-btn');
-            
-            let productsData = [];
+// Configuração do Multer para aceitar todos os novos campos de mídia
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+const uploadFields = upload.fields([
+    { name: 'imagemURL1', maxCount: 1 },
+    { name: 'imagemURL2', maxCount: 1 },
+    { name: 'imagemURL3', maxCount: 1 },
+    { name: 'somOriginal', maxCount: 1 },
+    { name: 'somLenta', maxCount: 1 },
+    { name: 'somAcelerando', maxCount: 1 }
+]);
 
-            // --- LÓGICA DE INICIALIZAÇÃO ---
-            async function initializeAuthForm() {
-                try {
-                    const response = await fetch('/api/check-admin');
-                    const data = await response.json();
-                    const containerToShow = data.adminExists ? loginContainer : registerContainer;
-                    
-                    containerToShow.classList.remove('hidden');
-                    setTimeout(() => {
-                         containerToShow.classList.remove('opacity-0', '-translate-y-5');
-                    }, 10);
+function isAuthenticated(req, res, next) {
+    if (req.session.loggedIn) {
+        return next();
+    }
+    res.status(401).json({ message: 'Acesso não autorizado. Por favor, faça o login.' });
+}
 
-                } catch (error) {
-                    loginContainer.classList.remove('hidden', 'opacity-0', '-translate-y-5');
-                    loginError.textContent = 'Erro ao conectar ao servidor.';
-                }
-            }
-            
-            // --- LÓGICA DE AUTENTICAÇÃO ---
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                loginError.textContent = '';
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                try {
-                    const response = await fetch('/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
-                    });
-                    const result = await response.json();
-                    if (response.ok) {
-                        authOverlay.classList.add('hidden');
-                        adminArea.classList.remove('hidden');
-                        await loadProducts();
-                    } else {
-                        loginError.textContent = result.message;
-                    }
-                } catch (err) {
-                    loginError.textContent = 'Erro de conexão com o servidor.';
-                }
+const uploadFileToStorage = async (file, folder) => {
+    if (!file) return null;
+    const fileName = `${folder}/${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
+    const fileUpload = bucket.file(fileName);
+    const blobStream = fileUpload.createWriteStream({
+        metadata: { contentType: file.mimetype }
+    });
+    return new Promise((resolve, reject) => {
+        blobStream.on('error', error => reject(error));
+        blobStream.on('finish', () => {
+            fileUpload.makePublic().then(() => {
+                resolve(`https://storage.googleapis.com/${bucket.name}/${fileName}`);
             });
-
-            registerForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                registerError.textContent = '';
-                const username = document.getElementById('reg-username').value;
-                const password = document.getElementById('reg-password').value;
-                try {
-                    const response = await fetch('/api/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
-                    });
-                    const result = await response.json();
-                    if (response.ok) {
-                        alert('Administrador cadastrado com sucesso! Faça o login.');
-                        window.location.reload();
-                    } else {
-                        registerError.textContent = result.message;
-                    }
-                } catch (err) {
-                    registerError.textContent = 'Erro de conexão com o servidor.';
-                }
-            });
-
-            logoutBtn.addEventListener('click', async () => {
-                await fetch('/logout', { method: 'POST' });
-                window.location.reload();
-            });
-            
-            // --- LÓGICA DE PRODUTOS ---
-            function renderProductList() {
-                productList.innerHTML = '';
-                if (productsData.length === 0) {
-                    productList.innerHTML = `<p class="text-center text-gray-500">Nenhum produto cadastrado ainda.</p>`;
-                    return;
-                }
-                productsData.forEach(product => {
-                    const price = typeof product.preco === 'number' ? product.preco.toFixed(2) : 'N/A';
-                    const productElement = document.createElement('div');
-                    productElement.className = 'flex items-center justify-between p-3 border-b hover:bg-gray-50';
-                    productElement.innerHTML = `
-                        <div class="flex items-center gap-4">
-                            <img src="${product.imagemURL1 || 'https://placehold.co/100x100/ccc/333?text=Img'}" alt="${product.nomeProduto}" class="w-16 h-16 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ccc/333?text=Img';">
-                            <div>
-                                <p class="font-semibold">${product.nomeProduto}</p>
-                                <p class="text-sm text-gray-600">${product.marca} ${product.modelo} - R$ ${price}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="edit-btn text-sm bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600" data-id="${product.id}">Editar</button>
-                            <button class="delete-btn text-sm bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600" data-id="${product.id}">Excluir</button>
-                        </div>
-                    `;
-                    productList.appendChild(productElement);
-                });
-                document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', handleEdit));
-                document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', handleDelete));
-            }
-
-            async function loadProducts() {
-                try {
-                    const response = await fetch('/api/products');
-                    if (!response.ok) throw new Error('Falha ao buscar produtos.');
-                    productsData = await response.json();
-                    renderProductList();
-                } catch (error) {
-                    console.error('Erro:', error);
-                    productList.innerHTML = `<p class="text-red-500">${error.message}</p>`;
-                }
-            }
-
-            function openModal(product = null) {
-                productForm.reset();
-                document.getElementById('product-id').value = '';
-                if (product) {
-                    modalTitle.textContent = 'Editar Produto';
-                    document.getElementById('product-id').value = product.id;
-                    document.getElementById('marca').value = product.marca;
-                    document.getElementById('modelo').value = product.modelo;
-                    document.getElementById('ano').value = Array.isArray(product.ano) ? product.ano.join(', ') : '';
-                    document.getElementById('nomeProduto').value = product.nomeProduto;
-                    document.getElementById('descricao').value = product.descricao;
-                    document.getElementById('preco').value = product.preco;
-                    document.getElementById('videoURL').value = product.videoURL || '';
-                } else {
-                    modalTitle.textContent = 'Adicionar Novo Produto';
-                }
-                productModal.classList.remove('hidden');
-                setTimeout(() => {
-                    productModal.classList.remove('opacity-0');
-                    productModal.querySelector('.modal-content').classList.remove('-translate-y-10');
-                }, 10);
-            }
-
-            function closeModal() {
-                productModal.classList.add('opacity-0');
-                productModal.querySelector('.modal-content').classList.add('-translate-y-10');
-                setTimeout(() => productModal.classList.add('hidden'), 300);
-            }
-
-            function handleEdit(e) {
-                const id = e.target.dataset.id;
-                const product = productsData.find(p => p.id === id);
-                openModal(product);
-            }
-
-            async function handleDelete(e) {
-                const id = e.target.dataset.id;
-                if (confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
-                    try {
-                        const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-                        if (!response.ok) {
-                             const err = await response.json();
-                             throw new Error(err.message || 'Falha ao excluir.');
-                        }
-                        alert('Produto excluído com sucesso.');
-                        await loadProducts();
-                    } catch (error) {
-                        alert(error.message);
-                    }
-                }
-            }
-
-            addProductBtn.addEventListener('click', () => openModal());
-            cancelBtn.addEventListener('click', closeModal);
-
-            productForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const id = document.getElementById('product-id').value;
-                const formData = new FormData(this);
-                
-                // Renomeia o campo da imagem principal para o backend
-                const imagemPrincipal = formData.get('imagemURL1');
-                if (imagemPrincipal) {
-                    formData.delete('imagemURL1');
-                    formData.append('imagemURL', imagemPrincipal);
-                }
-
-                const url = id ? `/api/products/${id}` : '/api/products';
-                const method = id ? 'PUT' : 'POST';
-
-                try {
-                    const response = await fetch(url, {
-                        method: method,
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.message || 'Ocorreu um erro no servidor.');
-                    }
-                    
-                    alert('Produto salvo com sucesso!');
-                    closeModal();
-                    await loadProducts();
-
-                } catch (error) {
-                    alert(`Erro ao salvar: ${error.message}`);
-                }
-            });
-
-            // --- INICIALIZAÇÃO ---
-            initializeAuthForm();
         });
-    </script>
-</body>
-</html>
+        blobStream.end(file.buffer);
+    });
+};
+
+
+// 5. ROTAS DA API PÚBLICA E DE AUTENTICAÇÃO
+const usersCollection = db.collection('users');
+const productsCollection = db.collection('products');
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/api/check-admin', async (req, res) => {
+    try {
+        const snapshot = await usersCollection.limit(1).get();
+        res.json({ adminExists: !snapshot.empty });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor.' });
+    }
+});
+
+app.get('/api/products', async (req, res) => {
+    try {
+        const snapshot = await productsCollection.orderBy('createdAt', 'desc').get();
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao ler os produtos.' });
+    }
+});
+
+app.post('/api/register', async (req, res) => {
+    try {
+        const snapshot = await usersCollection.limit(1).get();
+        if (!snapshot.empty) {
+            return res.status(403).json({ message: 'Um administrador já está cadastrado.' });
+        }
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ message: 'Usuário e senha são obrigatórios.' });
+        }
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        await usersCollection.add({ username, password: hashedPassword });
+        res.status(201).json({ message: 'Administrador cadastrado com sucesso!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro interno do servidor ao registrar.' });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const snapshot = await usersCollection.where('username', '==', username).limit(1).get();
+        if (snapshot.empty) {
+            return res.status(401).json({ message: 'Credenciais inválidas.' });
+        }
+        const userDoc = snapshot.docs[0];
+        const user = userDoc.data();
+        const match = await bcrypt.compare(password, user.password);
+        if (match) {
+            req.session.loggedIn = true;
+            res.status(200).json({ message: 'Login bem-sucedido!' });
+        } else {
+            res.status(401).json({ message: 'Credenciais inválidas.' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Erro interno do servidor ao fazer login.' });
+    }
+});
+
+app.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) { return res.status(500).json({ message: 'Não foi possível fazer logout.' }); }
+        res.status(200).json({ message: 'Logout bem-sucedido.' });
+    });
+});
+
+
+// 6. ROTAS PROTEGIDAS (CRUD de Produtos)
+
+// [POST] /api/products - Cria um novo produto com múltiplas mídias
+app.post('/api/products', isAuthenticated, uploadFields, async (req, res) => {
+    try {
+        const { marca, modelo, ano, nomeProduto, descricao, preco, videoURL } = req.body;
+        const files = req.files;
+
+        if (!marca || !modelo || !ano || !nomeProduto || !preco || !files || !files['imagemURL1']) {
+            return res.status(400).json({ message: 'Campos obrigatórios (incluindo imagem principal) não foram preenchidos.' });
+        }
+        
+        const [
+            imagemURL1, imagemURL2, imagemURL3,
+            somOriginal, somLenta, somAcelerando
+        ] = await Promise.all([
+            uploadFileToStorage(files.imagemURL1 ? files.imagemURL1[0] : null, 'images'),
+            uploadFileToStorage(files.imagemURL2 ? files.imagemURL2[0] : null, 'images'),
+            uploadFileToStorage(files.imagemURL3 ? files.imagemURL3[0] : null, 'images'),
+            uploadFileToStorage(files.somOriginal ? files.somOriginal[0] : null, 'sounds'),
+            uploadFileToStorage(files.somLenta ? files.somLenta[0] : null, 'sounds'),
+            uploadFileToStorage(files.somAcelerando ? files.somAcelerando[0] : null, 'sounds')
+        ]);
+
+        const newProduct = {
+            marca, modelo, nomeProduto, descricao,
+            ano: ano.split(',').map(a => parseInt(a.trim(), 10)).filter(a => !isNaN(a)),
+            preco: parseFloat(preco),
+            videoURL: videoURL || null,
+            imagemURL1, imagemURL2, imagemURL3,
+            somOriginal, somLenta, somAcelerando,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        const docRef = await productsCollection.add(newProduct);
+        res.status(201).json({ id: docRef.id, ...newProduct });
+
+    } catch (error) {
+        console.error("Erro ao criar produto:", error);
+        res.status(500).json({ message: 'Erro interno do servidor ao criar produto.' });
+    }
+});
+
+// [PUT] /api/products/:id - Atualiza um produto existente com múltiplas mídias
+app.put('/api/products/:id', isAuthenticated, uploadFields, async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const docRef = productsCollection.doc(productId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Produto não encontrado.' });
+        }
+
+        const { marca, modelo, ano, nomeProduto, descricao, preco, videoURL } = req.body;
+        const files = req.files;
+        const updateData = {};
+
+        if (marca) updateData.marca = marca;
+        if (modelo) updateData.modelo = modelo;
+        if (nomeProduto) updateData.nomeProduto = nomeProduto;
+        if (descricao) updateData.descricao = descricao;
+        if (preco) updateData.preco = parseFloat(preco);
+        if (ano) updateData.ano = ano.split(',').map(a => parseInt(a.trim(), 10)).filter(a => !isNaN(a));
+        if (videoURL !== undefined) updateData.videoURL = videoURL || null;
+
+        if (files.imagemURL1) updateData.imagemURL1 = await uploadFileToStorage(files.imagemURL1[0], 'images');
+        if (files.imagemURL2) updateData.imagemURL2 = await uploadFileToStorage(files.imagemURL2[0], 'images');
+        if (files.imagemURL3) updateData.imagemURL3 = await uploadFileToStorage(files.imagemURL3[0], 'images');
+        if (files.somOriginal) updateData.somOriginal = await uploadFileToStorage(files.somOriginal[0], 'sounds');
+        if (files.somLenta) updateData.somLenta = await uploadFileToStorage(files.somLenta[0], 'sounds');
+        if (files.somAcelerando) updateData.somAcelerando = await uploadFileToStorage(files.somAcelerando[0], 'sounds');
+        
+        await docRef.update(updateData);
+        res.status(200).json({ message: 'Produto atualizado com sucesso.' });
+
+    } catch (error) {
+        console.error("Erro ao atualizar produto:", error);
+        res.status(500).json({ message: 'Erro interno do servidor ao atualizar produto.' });
+    }
+});
+
+// [DELETE] /api/products/:id - Exclui um produto e todas as suas mídias
+app.delete('/api/products/:id', isAuthenticated, async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const docRef = productsCollection.doc(productId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Produto não encontrado.' });
+        }
+
+        const productData = doc.data();
+        
+        const fileUrls = [
+            productData.imagemURL1, productData.imagemURL2, productData.imagemURL3,
+            productData.somOriginal, productData.somLenta, productData.somAcelerando
+        ];
+
+        for (const url of fileUrls) {
+            if (url) {
+                try {
+                    const fileName = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
+                    await bucket.file(fileName).delete();
+                } catch (err) {
+                    console.error(`Falha ao deletar arquivo do Storage: ${url}`, err.message);
+                }
+            }
+        }
+
+        await docRef.delete();
+        res.status(200).json({ message: 'Produto excluído com sucesso.' });
+
+    } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        res.status(500).json({ message: 'Erro interno do servidor ao excluir produto.' });
+    }
+});
+
+
+// 7. INICIALIZAÇÃO DO SERVIDOR
+app.listen(PORT, () => {
+    console.log(`Servidor Turboost rodando na porta ${PORT} com integração Firebase.`);
+});
