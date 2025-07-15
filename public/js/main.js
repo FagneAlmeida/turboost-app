@@ -1,11 +1,28 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- CONFIGURAÇÃO DO FIREBASE (CLIENT-SIDE) ---
+    // #INSTRUÇÃO: Cole aqui a configuração do seu app da web do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCxIDu1-Cb9EVD78YVcvDxQGDaUTGrn9j0",
+        authDomain: "oficina-fg-motos.firebaseapp.com",
+        projectId: "oficina-fg-motos",
+        storageBucket: "oficina-fg-motos.appspot.com",
+        messagingSenderId: "177342497064",
+        appId: "1:177342497064:web:b5abdb2da82de4cccdd01d"
+    };
+
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
     // --- VARIÁVEIS GLOBAIS ---
     let allProducts = [];
     let veiculosParaFiltro = {};
     let cart = JSON.parse(localStorage.getItem('turboostCart')) || [];
-    const WHATSAPP_NUMBER = '5551920012581'; // COLOQUE SEU NÚMERO de telefone aqui
+    const WHATSAPP_NUMBER = '5551920012581';
 
     // --- ELEMENTOS DO DOM ---
+    // ... (elementos existentes)
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     const marcaSelect = document.getElementById('marca-select');
@@ -15,8 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const productGrid = document.getElementById('product-grid');
     const vitrineTitulo = document.getElementById('vitrine-titulo');
     const yearSpan = document.getElementById('year');
-    
-    // Elementos do Carrinho
     const cartButton = document.getElementById('cart-button');
     const cartPanel = document.getElementById('cart-panel');
     const cartOverlay = document.getElementById('cart-overlay');
@@ -25,15 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartCount = document.getElementById('cart-count');
     const cartTotal = document.getElementById('cart-total');
     const checkoutBtn = document.getElementById('checkout-btn');
-    
-    // Elementos da Galeria de Som
     const btnSomOriginal = document.getElementById('btn-som-original');
     const btnSomLenta = document.getElementById('btn-som-lenta');
     const btnSomAcelerando = document.getElementById('btn-som-acelerando');
     const soundButtons = [btnSomOriginal, btnSomLenta, btnSomAcelerando];
     let currentAudio = null;
-
-    // Elementos do Modal de Detalhes
     const detailsModalOverlay = document.getElementById('details-modal-overlay');
     const detailsModal = document.getElementById('details-modal');
     const closeDetailsModalBtn = document.getElementById('close-details-modal-btn');
@@ -45,9 +56,113 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalProductPrice = document.getElementById('modal-product-price');
     const modalAddToCartBtn = document.getElementById('modal-add-to-cart-btn');
 
+    // Elementos de Autenticação do Cliente (NOVOS)
+    const authModalOverlay = document.getElementById('auth-modal-overlay');
+    const authModal = document.getElementById('auth-modal');
+    const closeAuthModalBtn = document.getElementById('close-auth-modal-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userArea = document.getElementById('user-area');
+    const userInfo = document.getElementById('user-info');
+    const userGreeting = document.getElementById('user-greeting');
+    const customerLoginView = document.getElementById('customer-login-view');
+    const customerRegisterView = document.getElementById('customer-register-view');
+    const showRegisterViewBtn = document.getElementById('show-register-view-btn');
+    const showLoginViewBtn = document.getElementById('show-login-view-btn');
+    const customerLoginForm = document.getElementById('customer-login-form');
+    const customerRegisterForm = document.getElementById('customer-register-form');
+    const loginFormError = document.getElementById('login-form-error');
+    const registerFormError = document.getElementById('register-form-error');
+
+
+    // --- LÓGICA DE AUTENTICAÇÃO DO CLIENTE (NOVO) ---
+    auth.onAuthStateChanged(async user => {
+        if (user) {
+            // Usuário está logado
+            const userProfile = await db.collection('clientProfiles').doc(user.uid).get();
+            const userName = userProfile.exists ? userProfile.data().name.split(' ')[0] : 'Usuário';
+            
+            userGreeting.textContent = `Olá, ${userName}`;
+            userArea.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            userInfo.classList.add('flex');
+            closeAuthModal();
+        } else {
+            // Usuário está deslogado
+            userArea.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+            userInfo.classList.remove('flex');
+        }
+    });
+
+    function openAuthModal() {
+        authModalOverlay.classList.add('open');
+        authModal.classList.add('open');
+    }
+
+    function closeAuthModal() {
+        authModalOverlay.classList.remove('open');
+        authModal.classList.remove('open');
+    }
+
+    function handleLogout() {
+        auth.signOut().catch(error => console.error("Erro ao fazer logout:", error));
+    }
+
+    customerLoginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        loginFormError.textContent = '';
+
+        auth.signInWithEmailAndPassword(email, password)
+            .catch(error => {
+                loginFormError.textContent = getAuthErrorMessage(error.code);
+            });
+    });
+
+    customerRegisterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        registerFormError.textContent = '';
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                // Salva o nome do usuário no Firestore
+                return db.collection('clientProfiles').doc(userCredential.user.uid).set({
+                    name: name,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .catch(error => {
+                registerFormError.textContent = getAuthErrorMessage(error.code);
+            });
+    });
+    
+    function getAuthErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/invalid-email':
+                return 'Formato de e-mail inválido.';
+            case 'auth/user-not-found':
+                return 'Nenhuma conta encontrada com este e-mail.';
+            case 'auth/wrong-password':
+                return 'Senha incorreta.';
+            case 'auth/email-already-in-use':
+                return 'Este e-mail já está em uso.';
+            case 'auth/weak-password':
+                return 'A senha deve ter no mínimo 6 caracteres.';
+            default:
+                return 'Ocorreu um erro. Tente novamente.';
+        }
+    }
+
 
     // --- FUNÇÕES DE INICIALIZAÇÃO E UI ---
     function setupEventListeners() {
+        // ... (listeners existentes)
         mobileMenuButton.addEventListener('click', toggleMobileMenu);
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -62,22 +177,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-        
         marcaSelect.addEventListener('change', handleMarcaChange);
         modeloSelect.addEventListener('change', handleModeloChange);
         anoSelect.addEventListener('change', () => buscarBtn.disabled = !anoSelect.value);
         buscarBtn.addEventListener('click', handleSearch);
-        
         cartButton.addEventListener('click', openCart);
-        closeCartBtn.addEventListener('click', closeCart);
-        cartOverlay.addEventListener('click', closeCart);
-        
+        if(closeCartBtn) closeCartBtn.addEventListener('click', closeCart);
+        if(cartOverlay) cartOverlay.addEventListener('click', closeCart);
         if(checkoutBtn) checkoutBtn.addEventListener('click', handleCheckout);
+        if(closeDetailsModalBtn) closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+        if(detailsModalOverlay) detailsModalOverlay.addEventListener('click', closeDetailsModal);
 
-        closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
-        detailsModalOverlay.addEventListener('click', closeDetailsModal);
+        // Listeners de Autenticação (NOVOS)
+        loginBtn.addEventListener('click', openAuthModal);
+        logoutBtn.addEventListener('click', handleLogout);
+        closeAuthModalBtn.addEventListener('click', closeAuthModal);
+        authModalOverlay.addEventListener('click', closeAuthModal);
+        showRegisterViewBtn.addEventListener('click', () => {
+            customerLoginView.classList.add('hidden');
+            customerRegisterView.classList.remove('hidden');
+        });
+        showLoginViewBtn.addEventListener('click', () => {
+            customerRegisterView.classList.add('hidden');
+            customerLoginView.classList.remove('hidden');
+        });
     }
 
+    // ... (resto do seu código: toggleMobileMenu, updateYear, carregarProdutos, etc.)
     function toggleMobileMenu() {
         if (mobileMenu) {
             const isOpen = mobileMenu.classList.toggle('-translate-y-[150%]');
@@ -91,7 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- LÓGICA DE PRODUTOS E VITRINE ---
     async function carregarProdutos() {
         try {
             const response = await fetch('/api/products');
@@ -160,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- LÓGICA DOS FILTROS ---
     function popularFiltros() {
         if(!marcaSelect) return;
         const marcas = Object.keys(veiculosParaFiltro).sort();
@@ -229,7 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
         popularVitrine(produtosFiltrados);
     }
 
-    // --- LÓGICA DO MODAL DE DETALHES ---
     function openDetailsModal(product) {
         modalProductTitle.textContent = product.nomeProduto;
         modalProductDescription.textContent = product.descricao;
@@ -271,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function closeDetailsModal() {
-        detailsModalOverlay.classList.remove('open');
-        detailsModal.classList.remove('open');
-        modalVideoContainer.innerHTML = '';
+        if(detailsModalOverlay) detailsModalOverlay.classList.remove('open');
+        if(detailsModal) detailsModal.classList.remove('open');
+        if(modalVideoContainer) modalVideoContainer.innerHTML = '';
     }
 
     function showMedia(item, activeThumb) {
@@ -296,12 +419,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getYouTubeID(url) {
+        if(!url) return null;
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // --- LÓGICA DO CARRINHO ---
     function handleAddToCart(event) {
         const productId = event.currentTarget.dataset.id;
         const productToAdd = allProducts.find(p => p.id === productId);
@@ -354,8 +477,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
         const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-        cartCount.textContent = totalItems;
-        cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+        if(cartCount) cartCount.textContent = totalItems;
+        if(cartTotal) cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
         
         if(checkoutBtn) checkoutBtn.disabled = cart.length === 0;
     }
@@ -382,16 +505,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.open(whatsappUrl, '_blank');
     }
 
-    // --- LÓGICA DA GALERIA DE SONS ---
     function setSoundButtonsState(product) {
         const iconHTML = `<div class="wave-bar" style="animation-delay: 0.1s;"></div><div class="wave-bar" style="animation-delay: 0.2s;"></div><div class="wave-bar" style="animation-delay: 0.3s;"></div>`;
-        btnSomOriginal.querySelector('.sound-wave-icon').innerHTML = iconHTML;
-        btnSomLenta.querySelector('.sound-wave-icon').innerHTML = iconHTML;
-        btnSomAcelerando.querySelector('.sound-wave-icon').innerHTML = iconHTML;
+        if(btnSomOriginal) btnSomOriginal.querySelector('.sound-wave-icon').innerHTML = iconHTML;
+        if(btnSomLenta) btnSomLenta.querySelector('.sound-wave-icon').innerHTML = iconHTML;
+        if(btnSomAcelerando) btnSomAcelerando.querySelector('.sound-wave-icon').innerHTML = iconHTML;
 
-        btnSomOriginal.disabled = !product?.somOriginal;
-        btnSomLenta.disabled = !product?.somLenta;
-        btnSomAcelerando.disabled = !product?.somAcelerando;
+        if(btnSomOriginal) btnSomOriginal.disabled = !product?.somOriginal;
+        if(btnSomLenta) btnSomLenta.disabled = !product?.somLenta;
+        if(btnSomAcelerando) btnSomAcelerando.disabled = !product?.somAcelerando;
     }
 
     function stopCurrentSound() {
@@ -428,9 +550,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        btnSomOriginal.addEventListener('click', (e) => getSelectedProductAndPlay('somOriginal', e.currentTarget));
-        btnSomLenta.addEventListener('click', (e) => getSelectedProductAndPlay('somLenta', e.currentTarget));
-        btnSomAcelerando.addEventListener('click', (e) => getSelectedProductAndPlay('somAcelerando', e.currentTarget));
+        if(btnSomOriginal) btnSomOriginal.addEventListener('click', (e) => getSelectedProductAndPlay('somOriginal', e.currentTarget));
+        if(btnSomLenta) btnSomLenta.addEventListener('click', (e) => getSelectedProductAndPlay('somLenta', e.currentTarget));
+        if(btnSomAcelerando) btnSomAcelerando.addEventListener('click', (e) => getSelectedProductAndPlay('somAcelerando', e.currentTarget));
     }
 
     // --- INICIALIZAÇÃO ---
