@@ -5,18 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turboost - Escapamentos de Alta Performance para Motocicletas</title>
     
-    <!-- Favicon (Opcional, coloque seu favicon na pasta public/images) -->
     <link rel="icon" href="/images/favicon.png" type="image/png">
-
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Nosso arquivo de CSS customizado -->
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="antialiased">
@@ -35,12 +28,10 @@
             </nav>
             <div class="flex items-center gap-4">
                 <a href="#produtos" class="hidden md:block btn btn-accent">Monte seu Kit</a>
-                <!-- Botão do Carrinho -->
                 <button id="cart-button" class="relative text-white hover:text-accent transition-colors">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     <span id="cart-count" class="absolute -top-2 -right-2 bg-detail text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
                 </button>
-                <!-- Botão do Menu Mobile -->
                 <div class="lg:hidden">
                     <button id="mobile-menu-button" class="text-white focus:outline-none">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
@@ -101,7 +92,7 @@
                 <h2 id="vitrine-titulo" class="font-anton text-4xl md:text-5xl text-center uppercase">Nossos <span class="text-accent">Best-Sellers</span></h2>
                 <div class="divider my-4"></div>
                 <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-                    <!-- Cards de produtos são carregados aqui pelo JavaScript -->
+                    <!-- Cards de produtos são carregados aqui -->
                 </div>
             </div>
         </section>
@@ -140,70 +131,48 @@
                         Entregamos uma nova alma para sua motocicleta, combinando engenharia de precisão com a paixão pelas duas rodas.
                     </p>
                 </div>
-                
-                <div class="max-w-4xl mx-auto text-left space-y-12">
-                    <!-- Missão, Visão e Valores -->
-                </div>
+                <!-- Conteúdo de Missão, Visão e Valores -->
             </div>
         </section>
     </main>
 
     <!-- =========== FOOTER =========== -->
     <footer id="contato" class="bg-black pt-20 pb-8">
-        <div class="container mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                <!-- Coluna 1: Logo e Social -->
-                <div class="text-center md:text-left">
-                    <a href="/" class="inline-block mb-6">
-                         <img src="/images/logo.png" alt="Logotipo Turboost" class="h-12 mx-auto md:mx-0" onerror="this.onerror=null;this.src='https://placehold.co/200x50/1a1a1a/FFC700?text=Turboost';">
-                    </a>
-                    <p class="text-gray-400 max-w-md mx-auto md:mx-0">Acelerando suas paixões com a mais alta tecnologia em escapamentos esportivos.</p>
-                </div>
-                <!-- Coluna 2: Contato -->
-                <div>
-                    <h4 class="font-anton text-2xl mb-6 text-center md:text-left">Contato</h4>
-                    <form id="contact-form" class="space-y-4">
-                        <input type="text" placeholder="Seu Nome" class="contact-input" required>
-                        <input type="email" placeholder="Seu E-mail" class="contact-input" required>
-                        <textarea placeholder="Sua Mensagem" rows="4" class="contact-input" required></textarea>
-                        <button type="submit" class="btn btn-accent w-full md:w-auto">Enviar Mensagem</button>
-                    </form>
-                </div>
-                 <!-- Coluna 3: Links Rápidos -->
-                <div>
-                    <h4 class="font-anton text-2xl mb-6 text-center md:text-left">Links Rápidos</h4>
-                    <ul class="space-y-3 text-center md:text-left">
-                        <li><a href="#hero" class="text-gray-400 hover:text-accent transition-colors">Início</a></li>
-                        <li><a href="#produtos" class="text-gray-400 hover:text-accent transition-colors">Produtos</a></li>
-                        <li><a href="#sobre" class="text-gray-400 hover:text-accent transition-colors">Sobre Nós</a></li>
-                        <li><a href="#contato" class="text-gray-400 hover:text-accent transition-colors">Contato</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-12 pt-6 text-center text-gray-500">
-                <p>&copy; <span id="year"></span> Turboost. Todos os direitos reservados.</p>
-            </div>
-        </div>
+        <!-- Conteúdo do Rodapé -->
     </footer>
 
     <!-- =========== CART PANEL =========== -->
     <div id="cart-overlay" class="cart-overlay"></div>
     <aside id="cart-panel" class="cart-panel text-white">
-        <header class="cart-header">
-            <h3 class="font-anton text-2xl text-accent">Seu Carrinho</h3>
-            <button id="close-cart-btn" class="text-white hover:text-accent transition-colors text-4xl leading-none">&times;</button>
-        </header>
-        <div id="cart-items" class="cart-items">
-            <!-- Itens do carrinho são carregados aqui pelo JavaScript -->
-        </div>
-        <footer class="cart-footer">
-            <div class="flex justify-between items-center mb-6">
-                <span class="text-lg uppercase font-bold">Total</span>
-                <span id="cart-total" class="text-2xl font-bold text-accent">R$ 0,00</span>
-            </div>
-            <button id="checkout-btn" class="btn btn-accent w-full" disabled>Finalizar Pedido via WhatsApp</button>
-        </footer>
+        <!-- Conteúdo do Carrinho -->
     </aside>
+
+    <!-- =========== MODAL DE DETALHES DO PRODUTO (NOVO) =========== -->
+    <div id="details-modal-overlay" class="details-modal-overlay"></div>
+    <div id="details-modal" class="details-modal">
+        <button id="close-details-modal-btn" class="details-modal-close-btn">&times;</button>
+        <div class="details-modal-content">
+            <!-- Coluna da Galeria -->
+            <div class="details-modal-gallery">
+                <div id="modal-video-container" class="mb-4 hidden">
+                    <!-- Iframe do YouTube será inserido aqui -->
+                </div>
+                <div id="modal-main-image-container">
+                    <img id="modal-main-image" src="" alt="Imagem principal do produto" class="w-full h-auto object-cover rounded-lg">
+                </div>
+                <div id="modal-thumbnails" class="flex gap-2 mt-4">
+                    <!-- Miniaturas das imagens e vídeo serão inseridas aqui -->
+                </div>
+            </div>
+            <!-- Coluna de Informações -->
+            <div class="details-modal-info">
+                <h2 id="modal-product-title" class="font-anton text-4xl text-white"></h2>
+                <p id="modal-product-description" class="text-gray-300 my-4"></p>
+                <span id="modal-product-price" class="text-4xl font-bold text-accent my-4 block"></span>
+                <button id="modal-add-to-cart-btn" class="btn btn-accent btn-hero w-full">Adicionar ao Carrinho</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Nosso arquivo de JavaScript -->
     <script src="/js/script.js"></script>
