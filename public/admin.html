@@ -24,7 +24,7 @@
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
             
             <!-- Formulário de Login (inicialmente oculto) -->
-            <div id="login-container" class="form-container opacity-0 transform -translate-y-5">
+            <div id="login-container" class="form-container opacity-0 transform -translate-y-5 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center">Acesso Restrito</h2>
                 <form id="login-form">
                     <div class="mb-4">
@@ -41,7 +41,7 @@
             </div>
 
             <!-- Formulário de Registro (inicialmente oculto) -->
-            <div id="register-container" class="form-container opacity-0 transform -translate-y-5">
+            <div id="register-container" class="form-container opacity-0 transform -translate-y-5 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center">Cadastrar Administrador</h2>
                 <p class="text-center text-sm text-gray-600 mb-4">Crie o primeiro usuário para gerenciar o site.</p>
                 <form id="register-form">
@@ -173,10 +173,13 @@
                     const data = await response.json();
                     const containerToShow = data.adminExists ? loginContainer : registerContainer;
                     
-                    containerToShow.classList.remove('opacity-0', '-translate-y-5');
+                    containerToShow.classList.remove('hidden');
+                    setTimeout(() => {
+                         containerToShow.classList.remove('opacity-0', '-translate-y-5');
+                    }, 10);
 
                 } catch (error) {
-                    loginContainer.classList.remove('opacity-0', '-translate-y-5');
+                    loginContainer.classList.remove('hidden', 'opacity-0', '-translate-y-5');
                     loginError.textContent = 'Erro ao conectar ao servidor.';
                 }
             }
@@ -220,7 +223,7 @@
                     const result = await response.json();
                     if (response.ok) {
                         alert('Administrador cadastrado com sucesso! Faça o login.');
-                        window.location.reload(); // Recarrega para mostrar o form de login
+                        window.location.reload();
                     } else {
                         registerError.textContent = result.message;
                     }
@@ -242,6 +245,7 @@
                     return;
                 }
                 productsData.forEach(product => {
+                    const price = typeof product.preco === 'number' ? product.preco.toFixed(2) : 'N/A';
                     const productElement = document.createElement('div');
                     productElement.className = 'flex items-center justify-between p-3 border-b hover:bg-gray-50';
                     productElement.innerHTML = `
@@ -249,7 +253,7 @@
                             <img src="${product.imagemURL}" alt="${product.nomeProduto}" class="w-16 h-16 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ccc/333?text=Img';">
                             <div>
                                 <p class="font-semibold">${product.nomeProduto}</p>
-                                <p class="text-sm text-gray-600">${product.marca} ${product.modelo} - R$ ${product.preco.toFixed(2)}</p>
+                                <p class="text-sm text-gray-600">${product.marca} ${product.modelo} - R$ ${price}</p>
                             </div>
                         </div>
                         <div class="flex gap-2">
@@ -283,7 +287,7 @@
                     document.getElementById('product-id').value = product.id;
                     document.getElementById('marca').value = product.marca;
                     document.getElementById('modelo').value = product.modelo;
-                    document.getElementById('ano').value = product.ano.join(', ');
+                    document.getElementById('ano').value = Array.isArray(product.ano) ? product.ano.join(', ') : '';
                     document.getElementById('nomeProduto').value = product.nomeProduto;
                     document.getElementById('descricao').value = product.descricao;
                     document.getElementById('preco').value = product.preco;
@@ -304,13 +308,13 @@
             }
 
             function handleEdit(e) {
-                const id = parseInt(e.target.dataset.id, 10);
+                const id = e.target.dataset.id;
                 const product = productsData.find(p => p.id === id);
                 openModal(product);
             }
 
             async function handleDelete(e) {
-                const id = parseInt(e.target.dataset.id, 10);
+                const id = e.target.dataset.id;
                 if (confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
                     try {
                         const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
@@ -329,20 +333,10 @@
             addProductBtn.addEventListener('click', () => openModal());
             cancelBtn.addEventListener('click', closeModal);
 
-            // --- LÓGICA DE SUBMISSÃO DO FORMULÁRIO (CORRIGIDA) ---
             productForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const id = document.getElementById('product-id').value;
                 const formData = new FormData(this);
-
-                // Para edição, se um campo de arquivo estiver vazio, ele não deve ser enviado.
-                // Isso evita que o backend apague um arquivo existente.
-                if (id) {
-                    if (!formData.get('imagemURL').name) formData.delete('imagemURL');
-                    if (!formData.get('somOriginal').name) formData.delete('somOriginal');
-                    if (!formData.get('somLenta').name) formData.delete('somLenta');
-                    if (!formData.get('somAcelerando').name) formData.delete('somAcelerando');
-                }
                 
                 const url = id ? `/api/products/${id}` : '/api/products';
                 const method = id ? 'PUT' : 'POST';
@@ -350,7 +344,7 @@
                 try {
                     const response = await fetch(url, {
                         method: method,
-                        body: formData, // FormData é enviado diretamente. O browser define o Content-Type.
+                        body: formData,
                     });
 
                     if (!response.ok) {
