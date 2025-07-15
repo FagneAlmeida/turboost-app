@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const targetId = this.getAttribute('href');
                 const targetElement = document.querySelector(targetId);
                 if (targetElement) {
-                    if (!mobileMenu.classList.contains('-translate-y-[150%]')) {
+                    if (mobileMenu && !mobileMenu.classList.contains('-translate-y-[150%]')) {
                         toggleMobileMenu();
                     }
                     targetElement.scrollIntoView({ behavior: 'smooth' });
@@ -74,14 +74,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if(checkoutBtn) checkoutBtn.addEventListener('click', handleCheckout);
 
-        // Listeners do Modal de Detalhes
         closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
         detailsModalOverlay.addEventListener('click', closeDetailsModal);
     }
 
     function toggleMobileMenu() {
-        const isOpen = mobileMenu.classList.toggle('-translate-y-[150%]');
-        mobileMenu.classList.toggle('translate-y-0', !isOpen);
+        if (mobileMenu) {
+            const isOpen = mobileMenu.classList.toggle('-translate-y-[150%]');
+            mobileMenu.classList.toggle('translate-y-0', !isOpen);
+        }
     }
 
     function updateYear() {
@@ -147,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
             productGrid.appendChild(card);
         });
 
-        // Adiciona listeners aos novos botões
         document.querySelectorAll('.add-to-cart-btn').forEach(button => {
             button.addEventListener('click', handleAddToCart);
         });
@@ -161,7 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- LÓGICA DOS FILTROS ---
-    // (As funções de filtro permanecem as mesmas)
     function popularFiltros() {
         if(!marcaSelect) return;
         const marcas = Object.keys(veiculosParaFiltro).sort();
@@ -179,15 +178,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleMarcaChange() {
-        // ... (código existente)
+        const marcaSelecionada = marcaSelect.value;
+        resetSelect(modeloSelect, 'Selecione o Modelo');
+        resetSelect(anoSelect, 'Selecione o Ano');
+        buscarBtn.disabled = true;
+        setSoundButtonsState(null);
+
+        if (marcaSelecionada) {
+            modeloSelect.disabled = false;
+            const modelos = Object.keys(veiculosParaFiltro[marcaSelecionada]).sort();
+            modelos.forEach(modelo => {
+                const option = document.createElement('option');
+                option.value = modelo;
+                option.textContent = modelo;
+                modeloSelect.appendChild(option);
+            });
+        }
     }
 
     function handleModeloChange() {
-        // ... (código existente)
+        const marcaSelecionada = marcaSelect.value;
+        const modeloSelecionado = modeloSelect.value;
+        resetSelect(anoSelect, 'Selecione o Ano');
+        buscarBtn.disabled = true;
+        
+        stopCurrentSound();
+        const productForSound = allProducts.find(p => p.marca === marcaSelecionada && p.modelo === modeloSelecionado);
+        setSoundButtonsState(productForSound);
+
+        if (modeloSelecionado) {
+            anoSelect.disabled = false;
+            const anos = veiculosParaFiltro[marcaSelecionada][modeloSelecionado];
+            anos.forEach(ano => {
+                const option = document.createElement('option');
+                option.value = ano;
+                option.textContent = ano;
+                anoSelect.appendChild(option);
+            });
+        }
     }
 
     function handleSearch() {
-        // ... (código existente)
+        const marca = marcaSelect.value;
+        const modelo = modeloSelect.value;
+        const ano = parseInt(anoSelect.value, 10);
+        const produtosFiltrados = allProducts.filter(p => {
+            return p.marca === marca && p.modelo === modelo && Array.isArray(p.ano) && p.ano.includes(ano);
+        });
+        vitrineTitulo.innerHTML = `Resultados para <span class="text-accent">${marca} ${modelo} ${ano}</span>`;
+        popularVitrine(produtosFiltrados);
     }
 
     // --- LÓGICA DO MODAL DE DETALHES ---
@@ -196,13 +235,11 @@ document.addEventListener('DOMContentLoaded', function() {
         modalProductDescription.textContent = product.descricao;
         modalProductPrice.textContent = `R$ ${product.preco.toFixed(2).replace('.', ',')}`;
         
-        // Limpa a galeria anterior
         modalThumbnails.innerHTML = '';
         modalVideoContainer.innerHTML = '';
         modalVideoContainer.classList.add('hidden');
         modalMainImage.parentElement.classList.remove('hidden');
 
-        // Adiciona o botão do carrinho com o ID correto
         modalAddToCartBtn.dataset.id = product.id;
         modalAddToCartBtn.onclick = handleAddToCart;
 
@@ -225,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             modalThumbnails.appendChild(thumb);
             if (index === 0) {
-                showMedia(item, thumb); // Mostra o primeiro item por padrão
+                showMedia(item, thumb);
             }
         });
 
@@ -236,12 +273,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeDetailsModal() {
         detailsModalOverlay.classList.remove('open');
         detailsModal.classList.remove('open');
-        // Para o vídeo do YouTube se estiver tocando
         modalVideoContainer.innerHTML = '';
     }
 
     function showMedia(item, activeThumb) {
-        // Atualiza a miniatura ativa
         document.querySelectorAll('.modal-thumbnail').forEach(t => t.classList.remove('active'));
         activeThumb.classList.add('active');
 
@@ -254,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             modalVideoContainer.classList.add('hidden');
-            modalVideoContainer.innerHTML = ''; // Para o vídeo
+            modalVideoContainer.innerHTML = '';
             modalMainImage.parentElement.classList.remove('hidden');
             modalMainImage.src = item.url;
         }
@@ -266,29 +301,144 @@ document.addEventListener('DOMContentLoaded', function() {
         return (match && match[2].length === 11) ? match[2] : null;
     }
 
-
     // --- LÓGICA DO CARRINHO ---
-    // (As funções do carrinho permanecem as mesmas)
     function handleAddToCart(event) {
-        // ... (código existente)
+        const productId = event.currentTarget.dataset.id;
+        const productToAdd = allProducts.find(p => p.id === productId);
+        if (productToAdd) {
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ ...productToAdd, quantity: 1 });
+            }
+            saveCartAndRender();
+            openCart();
+        }
     }
-    // ... (resto das funções do carrinho) ...
 
+    function handleRemoveFromCart(event) {
+        const productId = event.currentTarget.dataset.id;
+        cart = cart.filter(item => item.id !== productId);
+        saveCartAndRender();
+    }
+    
+    function saveCartAndRender() {
+        localStorage.setItem('turboostCart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    function renderCart() {
+        if (!cartItemsContainer) return;
+        cartItemsContainer.innerHTML = '';
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = '<p class="text-gray-400 text-center">Seu carrinho está vazio.</p>';
+        } else {
+            cart.forEach(item => {
+                const cartItemEl = document.createElement('div');
+                cartItemEl.className = 'cart-item';
+                cartItemEl.innerHTML = `
+                    <img src="${item.imagemURL1 || 'https://placehold.co/100x100/1a1a1a/FFC700?text=Img'}" alt="${item.nomeProduto}" onerror="this.onerror=null;this.src='https://placehold.co/100x100/1a1a1a/FFC700?text=Img';">
+                    <div class="cart-item-details">
+                        <h4>${item.nomeProduto}</h4>
+                        <p>R$ ${item.preco.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <button class="remove-btn" data-id="${item.id}">&times;</button>
+                `;
+                cartItemsContainer.appendChild(cartItemEl);
+            });
+            document.querySelectorAll('.remove-btn').forEach(button => {
+                button.addEventListener('click', handleRemoveFromCart);
+            });
+        }
+        
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+        cartCount.textContent = totalItems;
+        cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+        
+        if(checkoutBtn) checkoutBtn.disabled = cart.length === 0;
+    }
+
+    function openCart() {
+        if(cartPanel) cartPanel.classList.add('open');
+        if(cartOverlay) cartOverlay.classList.add('open');
+    }
+
+    function closeCart() {
+        if(cartPanel) cartPanel.classList.remove('open');
+        if(cartOverlay) cartOverlay.classList.remove('open');
+    }
+
+    function handleCheckout() {
+        if (cart.length === 0) return;
+        let message = "Olá! Gostaria de fazer um pedido com os seguintes itens:\n\n";
+        cart.forEach(item => {
+            message += `*${item.quantity}x ${item.nomeProduto}* - R$ ${item.preco.toFixed(2).replace('.', ',')}\n`;
+        });
+        const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+        message += `\n*Total:* R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
 
     // --- LÓGICA DA GALERIA DE SONS ---
-    // (As funções da galeria de som permanecem as mesmas)
-    function setupSoundButtonListeners() {
-        // ... (código existente)
-    }
-    // ... (resto das funções de som) ...
+    function setSoundButtonsState(product) {
+        const iconHTML = `<div class="wave-bar" style="animation-delay: 0.1s;"></div><div class="wave-bar" style="animation-delay: 0.2s;"></div><div class="wave-bar" style="animation-delay: 0.3s;"></div>`;
+        btnSomOriginal.querySelector('.sound-wave-icon').innerHTML = iconHTML;
+        btnSomLenta.querySelector('.sound-wave-icon').innerHTML = iconHTML;
+        btnSomAcelerando.querySelector('.sound-wave-icon').innerHTML = iconHTML;
 
+        btnSomOriginal.disabled = !product?.somOriginal;
+        btnSomLenta.disabled = !product?.somLenta;
+        btnSomAcelerando.disabled = !product?.somAcelerando;
+    }
+
+    function stopCurrentSound() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
+        soundButtons.forEach(btn => btn.classList.remove('playing'));
+    }
+
+    function playSound(audioPath, buttonElement) {
+        if (buttonElement.classList.contains('playing')) {
+            stopCurrentSound();
+            return;
+        }
+        stopCurrentSound();
+        if (audioPath) {
+            currentAudio = new Audio(audioPath);
+            currentAudio.play().catch(e => console.error("Erro ao tocar áudio:", e));
+            buttonElement.classList.add('playing');
+            currentAudio.addEventListener('ended', stopCurrentSound);
+        }
+    }
+    
+    function setupSoundButtonListeners() {
+        const getSelectedProductAndPlay = (soundKey, button) => {
+            const marca = marcaSelect.value;
+            const modelo = modeloSelect.value;
+            if (!marca || !modelo) return;
+            const product = allProducts.find(p => p.marca === marca && p.modelo === modelo);
+            if (product && product[soundKey]) {
+                playSound(product[soundKey], button);
+            }
+        };
+
+        btnSomOriginal.addEventListener('click', (e) => getSelectedProductAndPlay('somOriginal', e.currentTarget));
+        btnSomLenta.addEventListener('click', (e) => getSelectedProductAndPlay('somLenta', e.currentTarget));
+        btnSomAcelerando.addEventListener('click', (e) => getSelectedProductAndPlay('somAcelerando', e.currentTarget));
+    }
 
     // --- INICIALIZAÇÃO ---
     function init() {
         setupEventListeners();
         setupSoundButtonListeners();
         carregarProdutos();
-        // renderCart(); // Descomente se precisar
+        renderCart();
         updateYear();
     }
 
