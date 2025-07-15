@@ -23,7 +23,6 @@
     <div id="auth-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
             
-            <!-- Formulário de Login (inicialmente oculto) -->
             <div id="login-container" class="form-container opacity-0 transform -translate-y-5 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center">Acesso Restrito</h2>
                 <form id="login-form">
@@ -40,7 +39,6 @@
                 </form>
             </div>
 
-            <!-- Formulário de Registro (inicialmente oculto) -->
             <div id="register-container" class="form-container opacity-0 transform -translate-y-5 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center">Cadastrar Administrador</h2>
                 <p class="text-center text-sm text-gray-600 mb-4">Crie o primeiro usuário para gerenciar o site.</p>
@@ -89,6 +87,8 @@
             <h2 id="modal-title" class="text-2xl font-bold mb-6">Adicionar Novo Produto</h2>
             <form id="product-form" class="space-y-4">
                 <input type="hidden" id="product-id">
+                
+                <!-- Campos Básicos -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="marca" class="block text-sm font-medium">Marca</label>
@@ -115,29 +115,52 @@
                     <label for="preco" class="block text-sm font-medium">Preço</label>
                     <input type="number" id="preco" name="preco" step="0.01" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                 </div>
-                <div class="border-t pt-4">
-                    <h3 class="text-lg font-semibold mb-2">Arquivos de Mídia</h3>
-                    <p class="text-xs text-gray-500 mb-2">Para editar, deixe o campo em branco para manter o arquivo atual. Para adicionar/trocar, selecione um novo arquivo.</p>
-                    <div class="space-y-3">
+
+                <!-- Campos de Mídia -->
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Galeria de Mídia</h3>
+                    <p class="text-xs text-gray-500 mb-3">Para editar, deixe campos de arquivo em branco para manter os atuais.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="imagemURL" class="block text-sm font-medium">Imagem Principal</label>
-                            <input type="file" id="imagemURL" name="imagemURL" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
+                            <label for="imagemURL1" class="block text-sm font-medium">Imagem Principal</label>
+                            <input type="file" id="imagemURL1" name="imagemURL1" class="w-full mt-1 text-sm file-input">
                         </div>
+                         <div>
+                            <label for="imagemURL2" class="block text-sm font-medium">Imagem 2</label>
+                            <input type="file" id="imagemURL2" name="imagemURL2" class="w-full mt-1 text-sm file-input">
+                        </div>
+                         <div>
+                            <label for="imagemURL3" class="block text-sm font-medium">Imagem 3</label>
+                            <input type="file" id="imagemURL3" name="imagemURL3" class="w-full mt-1 text-sm file-input">
+                        </div>
+                    </div>
+                     <div class="mt-4">
+                        <label for="videoURL" class="block text-sm font-medium">Link do Vídeo (YouTube)</label>
+                        <input type="url" id="videoURL" name="videoURL" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                </div>
+
+                <!-- Campos de Som (Mantidos) -->
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Comparação de Som</h3>
+                     <div class="space-y-3">
                         <div>
                             <label for="somOriginal" class="block text-sm font-medium">Som Original</label>
-                            <input type="file" id="somOriginal" name="somOriginal" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <input type="file" id="somOriginal" name="somOriginal" class="w-full mt-1 text-sm file-input-sound">
                         </div>
                         <div>
                             <label for="somLenta" class="block text-sm font-medium">Som (Marcha Lenta)</label>
-                            <input type="file" id="somLenta" name="somLenta" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <input type="file" id="somLenta" name="somLenta" class="w-full mt-1 text-sm file-input-sound">
                         </div>
                         <div>
                             <label for="somAcelerando" class="block text-sm font-medium">Som (Acelerando)</label>
-                            <input type="file" id="somAcelerando" name="somAcelerando" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <input type="file" id="somAcelerando" name="somAcelerando" class="w-full mt-1 text-sm file-input-sound">
                         </div>
                     </div>
                 </div>
-                <div class="flex justify-end gap-4 pt-6 border-t">
+
+                <div class="flex justify-end gap-4 pt-6 border-t mt-4">
                     <button type="button" id="cancel-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-md hover:bg-gray-300">Cancelar</button>
                     <button type="submit" class="bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-md hover:bg-yellow-600">Salvar Produto</button>
                 </div>
@@ -146,6 +169,8 @@
     </div>
 
     <script>
+        // O JavaScript para esta página permanece o mesmo por enquanto.
+        // As mudanças para salvar os novos campos serão feitas no server.js.
         document.addEventListener('DOMContentLoaded', function() {
             // --- ELEMENTOS DO DOM ---
             const authOverlay = document.getElementById('auth-overlay');
@@ -250,7 +275,7 @@
                     productElement.className = 'flex items-center justify-between p-3 border-b hover:bg-gray-50';
                     productElement.innerHTML = `
                         <div class="flex items-center gap-4">
-                            <img src="${product.imagemURL}" alt="${product.nomeProduto}" class="w-16 h-16 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ccc/333?text=Img';">
+                            <img src="${product.imagemURL1 || 'https://placehold.co/100x100/ccc/333?text=Img'}" alt="${product.nomeProduto}" class="w-16 h-16 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ccc/333?text=Img';">
                             <div>
                                 <p class="font-semibold">${product.nomeProduto}</p>
                                 <p class="text-sm text-gray-600">${product.marca} ${product.modelo} - R$ ${price}</p>
@@ -291,6 +316,7 @@
                     document.getElementById('nomeProduto').value = product.nomeProduto;
                     document.getElementById('descricao').value = product.descricao;
                     document.getElementById('preco').value = product.preco;
+                    document.getElementById('videoURL').value = product.videoURL || '';
                 } else {
                     modalTitle.textContent = 'Adicionar Novo Produto';
                 }
@@ -338,6 +364,13 @@
                 const id = document.getElementById('product-id').value;
                 const formData = new FormData(this);
                 
+                // Renomeia o campo da imagem principal para o backend
+                const imagemPrincipal = formData.get('imagemURL1');
+                if (imagemPrincipal) {
+                    formData.delete('imagemURL1');
+                    formData.append('imagemURL', imagemPrincipal);
+                }
+
                 const url = id ? `/api/products/${id}` : '/api/products';
                 const method = id ? 'PUT' : 'POST';
 
@@ -365,6 +398,5 @@
             initializeAuthForm();
         });
     </script>
-
 </body>
 </html>
