@@ -27,7 +27,7 @@
                 <a href="#contato" class="text-white hover:text-accent transition-colors duration-200 uppercase font-bold">Contato</a>
             </nav>
             <div class="flex items-center gap-4">
-                <!-- ÁREA DO USUÁRIO (NOVO) -->
+                <!-- ÁREA DO USUÁRIO -->
                 <div id="user-area" class="flex items-center gap-2">
                     <button id="login-btn" class="text-white hover:text-accent transition-colors flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -53,32 +53,152 @@
             </div>
         </div>
         <div id="mobile-menu" class="mobile-menu lg:hidden bg-primary absolute top-full left-0 w-full transform -translate-y-[150%]">
-            <!-- Conteúdo do menu mobile -->
+            <nav class="flex flex-col items-center space-y-6 py-8">
+                <a href="#hero" class="text-white text-lg uppercase font-bold">Início</a>
+                <a href="#produtos" class="text-white text-lg uppercase font-bold">Produtos</a>
+                <a href="#sobre" class="text-white text-lg uppercase font-bold">Sobre Nós</a>
+                <a href="#contato" class="text-white text-lg uppercase font-bold">Contato</a>
+            </nav>
         </div>
     </header>
 
     <main>
-        <!-- Conteúdo principal do site (hero, produtos, etc.) -->
+        <!-- =========== HERO SECTION =========== -->
+        <section id="hero" class="hero-bg h-screen flex items-center justify-center">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="font-anton text-5xl md:text-7xl lg:text-8xl text-white uppercase leading-tight drop-shadow-lg">O Ronco que Define a Estrada. <br> A <span class="text-accent">Potência</span> que Liberta.</h1>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto my-8 text-gray-200">Escapamentos de alta performance para motocicletas, projetados para um som inconfundível e ganhos reais de potência.</p>
+                <div><a href="#produtos" class="btn btn-accent btn-hero">Encontre o Escapamento Ideal</a></div>
+            </div>
+        </section>
+
+        <!-- =========== PRODUCT COMPOSER SECTION =========== -->
+        <section id="produtos" class="py-20 bg-bg-light">
+            <div class="container mx-auto px-6">
+                <h2 class="font-anton text-4xl md:text-5xl text-center uppercase text-text-dark">Encontre o Escapamento <span class="text-accent">Perfeito</span> para sua Motocicleta</h2>
+                <div class="max-w-4xl mx-auto mt-12">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                        <div>
+                            <label for="marca-select" class="font-bold text-gray-600 mb-2 block">Marca</label>
+                            <select id="marca-select" class="custom-select"><option value="">Selecione a Marca</option></select>
+                        </div>
+                        <div>
+                            <label for="modelo-select" class="font-bold text-gray-600 mb-2 block">Modelo</label>
+                            <select id="modelo-select" class="custom-select" disabled><option value="">Selecione o Modelo</option></select>
+                        </div>
+                        <div>
+                            <label for="ano-select" class="font-bold text-gray-600 mb-2 block">Ano</label>
+                            <select id="ano-select" class="custom-select" disabled><option value="">Selecione o Ano</option></select>
+                        </div>
+                    </div>
+                    <div class="text-center mt-8">
+                        <button id="buscar-produtos-btn" class="btn btn-accent btn-hero" disabled>Buscar Produtos</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== PRODUCT RESULTS / BEST SELLERS SECTION =========== -->
+        <section id="produtos-destacados" class="py-20 bg-primary">
+            <div class="container mx-auto px-6">
+                <h2 id="vitrine-titulo" class="font-anton text-4xl md:text-5xl text-center uppercase">Nossos <span class="text-accent">Best-Sellers</span></h2>
+                <div class="divider my-4"></div>
+                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+                    <!-- Cards de produtos são carregados aqui -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- =========== SOUND GALLERY SECTION =========== -->
+        <section id="galeria-sons" class="py-20 bg-gray-900/50">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="font-anton text-4xl md:text-5xl uppercase">Compare o <span class="text-accent">Som</span> da sua Moto</h2>
+                <div class="divider my-4"></div>
+                <p class="text-gray-400 max-w-xl mx-auto mb-12">Selecione sua moto nos campos acima e depois clique para ouvir a diferença que um Turboost faz.</p>
+                
+                <div class="flex flex-col md:flex-row justify-center items-center gap-6 max-w-3xl mx-auto">
+                    <button id="btn-som-original" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Som Original</span>
+                        <span class="sound-wave-icon"></span>
+                    </button>
+                    <button id="btn-som-lenta" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Turboost (Marcha Lenta)</span>
+                        <span class="sound-wave-icon"></span>
+                    </button>
+                    <button id="btn-som-acelerando" class="btn sound-btn w-full md:w-auto" disabled>
+                        <span class="sound-text">Turboost (Acelerando)</span>
+                        <span class="sound-wave-icon"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== ABOUT / WHY US SECTION =========== -->
+        <section id="sobre" class="py-20 bg-gray-900/50">
+            <div class="container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="font-anton text-4xl md:text-5xl uppercase">Nossa <span class="text-accent">Identidade</span></h2>
+                    <div class="divider my-4"></div>
+                    <p class="text-center max-w-2xl mx-auto mb-16 text-gray-400">
+                        Entregamos uma nova alma para sua motocicleta, combinando engenharia de precisão com a paixão pelas duas rodas.
+                    </p>
+                </div>
+                <!-- Conteúdo de Missão, Visão e Valores -->
+            </div>
+        </section>
     </main>
 
-    <!-- Rodapé -->
-    <footer>
-        <!-- Conteúdo do rodapé -->
+    <!-- =========== FOOTER =========== -->
+    <footer id="contato" class="bg-black pt-20 pb-8">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                <!-- Coluna 1: Logo e Social -->
+                <div class="text-center md:text-left">
+                    <a href="/" class="inline-block mb-6">
+                         <img src="/images/logo.png" alt="Logotipo Turboost" class="h-12 mx-auto md:mx-0" onerror="this.onerror=null;this.src='https://placehold.co/200x50/1a1a1a/FFC700?text=Turboost';">
+                    </a>
+                    <p class="text-gray-400 max-w-md mx-auto md:mx-0">Acelerando suas paixões com a mais alta tecnologia em escapamentos esportivos.</p>
+                </div>
+                <!-- Coluna 2: Contato -->
+                <div>
+                    <h4 class="font-anton text-2xl mb-6 text-center md:text-left">Contato</h4>
+                    <form id="contact-form" class="space-y-4">
+                        <input type="text" placeholder="Seu Nome" class="contact-input" required>
+                        <input type="email" placeholder="Seu E-mail" class="contact-input" required>
+                        <textarea placeholder="Sua Mensagem" rows="4" class="contact-input" required></textarea>
+                        <button type="submit" class="btn btn-accent w-full md:w-auto">Enviar Mensagem</button>
+                    </form>
+                </div>
+                 <!-- Coluna 3: Links Rápidos -->
+                <div>
+                    <h4 class="font-anton text-2xl mb-6 text-center md:text-left">Links Rápidos</h4>
+                    <ul class="space-y-3 text-center md:text-left">
+                        <li><a href="#hero" class="text-gray-400 hover:text-accent transition-colors">Início</a></li>
+                        <li><a href="#produtos" class="text-gray-400 hover:text-accent transition-colors">Produtos</a></li>
+                        <li><a href="#sobre" class="text-gray-400 hover:text-accent transition-colors">Sobre Nós</a></li>
+                        <li><a href="#contato" class="text-gray-400 hover:text-accent transition-colors">Contato</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-6 text-center text-gray-500">
+                <p>&copy; <span id="year"></span> Turboost. Todos os direitos reservados.</p>
+            </div>
+        </div>
     </footer>
 
-    <!-- Painel do Carrinho -->
+    <!-- =========== CART PANEL =========== -->
     <div id="cart-overlay" class="cart-overlay"></div>
     <aside id="cart-panel" class="cart-panel text-white">
         <!-- Conteúdo do carrinho -->
     </aside>
 
-    <!-- Modal de Detalhes do Produto -->
+    <!-- =========== MODAL DE DETALHES DO PRODUTO =========== -->
     <div id="details-modal-overlay" class="details-modal-overlay"></div>
     <div id="details-modal" class="details-modal">
         <!-- Conteúdo do modal de detalhes -->
     </div>
 
-    <!-- =========== MODAL DE AUTENTICAÇÃO DE CLIENTE (NOVO) =========== -->
+    <!-- =========== MODAL DE AUTENTICAÇÃO DE CLIENTE =========== -->
     <div id="auth-modal-overlay" class="details-modal-overlay"></div>
     <div id="auth-modal" class="details-modal" style="max-width: 450px;">
         <button id="close-auth-modal-btn" class="details-modal-close-btn">&times;</button>
@@ -115,11 +235,10 @@
     </div>
 
     <!-- Scripts -->
-    <!-- #INSTRUÇÃO: Adicione os scripts do Firebase SDK aqui -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
-    <script src="/js/script.js"></script>
+    <script src="/js/main.js"></script>
 </body>
 </html>
