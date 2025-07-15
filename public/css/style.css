@@ -246,9 +246,64 @@ body {
     opacity: 1;
     visibility: visible;
 }
-/* ... (outros estilos do carrinho) ... */
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #333;
+}
+.cart-header #close-cart-btn {
+    font-size: 2rem;
+    line-height: 1;
+}
+.cart-items {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+.cart-item {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.cart-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+.cart-item-details {
+    flex-grow: 1;
+}
+.cart-item-details h4 {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+.cart-item-details p {
+    color: var(--color-accent);
+    font-weight: bold;
+}
+.cart-item .remove-btn {
+    color: #888;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0.5rem;
+}
+.cart-item .remove-btn:hover {
+    color: var(--color-detail);
+}
+.cart-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #333;
+    background-color: #1a1a1a;
+}
 
-/* =========== NOVOS ESTILOS PARA O MODAL DE DETALHES =========== */
+/* =========== ESTILOS PARA O MODAL DE DETALHES =========== */
 .details-modal-overlay {
     position: fixed;
     top: 0;
